@@ -1,11 +1,22 @@
 'use strict';
 
 var libQ = require('kew');
-var fs=require('fs-extra');
+var fs = require('fs-extra');
 var config = new (require('v-conf'))();
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
+var font = require('../../LCD/font');
+var lcd = require('../../LCD/eadog-spi-lcd')
+var io = require('socket.io-client');
+const fontStyles = require('../../LCD/font').fontStyle
+const animationTypes = require('../../LCD/eadog-spi-lcd').animationTypes
 
+const states = Object.freeze({
+    starting: 0,
+    status: 1,
+    menu: 3,
+    stopping: 10
+})
 
 module.exports = eadogLcd;
 function eadogLcd(context) {
@@ -17,6 +28,7 @@ function eadogLcd(context) {
 	this.configManager = this.context.configManager;
 
 }
+
 
 
 
@@ -34,9 +46,32 @@ eadogLcd.prototype.onStart = function() {
     var self = this;
 	var defer=libQ.defer();
 
+    self.maxLine = 4
+    self.display = new lcd.TTYSimulator();
+    self.font_prop_16px = new font.Font();
+    self.font_prop_8px = new font.Font();
+    self.debugLogging = (self.config.get('logging')==true);
+	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
+    self.socket = io.connect('http://volumio:3000');
+    self.activateListeners();
 
+    //############################### improve, path is not good
+    self.font_prop_16px.loadFontFromJSON('./LCD/Fonts_JSON/font_proportional_16px.json');
+    self.font_prop_8px.loadFontFromJSON('./LCD/Fonts_JSON/font_proportional_8px.json');
+    self.font_prop_16px.spacing = 0;
+    self.state = {};
+    self.activePage = 0;
+    self.selectedLine = 0;
+    self.display.initialize({pinCd: 25, pinRst: 20, speedHz: 800000, viewDirection: 0, volume: 6})
+    .then(_ => self.display.clear())
+    .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
+    .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
+    .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
+    .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
+    .then(_ => self.display.startAnimation(1000))
 	// Once the Plugin has successfull started resolve the promise
-	defer.resolve();
+    .then(_ => defer.resolve())
+    .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ',err))
 
     return defer.promise;
 };
@@ -44,6 +79,11 @@ eadogLcd.prototype.onStart = function() {
 eadogLcd.prototype.onStop = function() {
     var self = this;
     var defer=libQ.defer();
+
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] onStop: stopping plugin')
+    self.display.stopAnimation();
+    self.deactivateListeners();
+    self.socket.close();
 
     // Once the Plugin has successfull stopped resolve the promise
     defer.resolve();
@@ -101,167 +141,188 @@ eadogLcd.prototype.setConf = function(varName, varValue) {
 	//Perform your installation tasks here
 };
 
+eadogLcd.prototype.activateListeners = function () {
+    var self = this;
+    self.socket.on('pushBrowseLibrary', function(data) {
+        if (data.navigation != undefined && data.navigation.prev != undefined) {
+            self.previousLevel = data.navigation.prev.uri;
+        } else {
+            self.previousLevel = "/";
+        }
+        if (data.hasOwnProperty('navigation') && data.navigation.hasOwnProperty('lists') && data.navigation.lists.length > 0) {
+            self.menuItems = data.navigation.lists[0].items;
+            self.pageCount = Math.ceil(self.menuItems.length/self.maxLine);
+            self.activePage = 0;
+            self.selectedLine = 0;
+            self.refreshDisplay(self.menuItems);
+        }
+    });
+    self.socket.on('pushBrowseSources', function(data) {    
+        self.menuItems = data;
+        self.pageCount = Math.ceil(data.length/self.maxLine);
+        self.activePage = 0;
+        self.selectedLine = 0;
+        self.refreshDisplay(self.menuItems);
+    });
+    self.socket.on('pushState', function(state) {
+        if (self.debugLogging) self.logger.info('[EADOG LCD] Push: ' + state.status + " - " + state.artist +  " - " + state.title);
+        self.updateStatus(state);
+    });
+    self.socket.emit('getBrowseSources');
+    self.socket.emit('getState');
+    // self.socket.emit('browseLibrary',{"uri":"radio/selection"});
+}
 
+eadogLcd.prototype.deactivateListeners = function (params) {
+    var self = this;
+    self.socket.off();
+    // self.socket.off('pushBrowseSources');
+    // self.socket.off('pushState');
+    // self.socket.emit('browseLibrary',{"uri":"radio/selection"});
+}
 
-// Playback Controls ---------------------------------------------------------------------------------------
-// If your plugin is not a music_sevice don't use this part and delete it
+eadogLcd.prototype.up = function(){
+    var self = this;
+    if (self.menuItems != undefined) {
+        self.selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+        self.selectedItem = (self.selectedItem + self.menuItems.length - 1) % self.menuItems.length;
+        self.activePage = Math.floor(self.selectedItem/self.maxLine);
+        self.selectedLine = self.selectedItem % self.maxLine;
+        self.refreshDisplay(self.menuItems)
+    }
+}
 
+eadogLcd.prototype.down = function(){
+    var self = this;
+    if (self.menuItems != undefined) {
+        self.selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+        self.selectedItem = (self.selectedItem + 1) % self.menuItems.length;
+        self.activePage = Math.floor(self.selectedItem/self.maxLine);
+        self.selectedLine = self.selectedItem % self.maxLine;
+        self.refreshDisplay(self.menuItems)
+    }
+}
 
-eadogLcd.prototype.addToBrowseSources = function () {
+ eadogLcd.prototype.select = function(){
+    var self = this;
+    let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+    let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
+    switch (selectedType) {
+        case 'music_service':
+        case 'radio-category':
+        case 'folder':
+            self.socket.emit('browseLibrary',{"uri":self.menuItems[selectedItem].uri})
+            break;
+        case 'webradio':
+            self.socket.emit('replaceAndPlay',self.menuItems[selectedItem])
+        case 'song':
+        case 'playlist':
+            self.socket.emit('addPlay',self.menuItems[selectedItem])
+            break;
+        default:
+            break;
+    }
+}
 
-	// Use this function to add your music service plugin to music sources
-    //var data = {name: 'Spotify', uri: 'spotify',plugin_type:'music_service',plugin_name:'spop'};
-    this.commandRouter.volumioAddToBrowseSources(data);
-};
+ eadogLcd.prototype.addToQueueAndPlay = function(){
+    var self = this;
+    let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+    let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
+    switch (selectedType) {
+        case 'music_service':
+        case 'radio-category':
+        case 'folder':
+        case 'song':
+        case 'playlist':
+            self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
+            self.socket.emit('play')
+            break;
+        case 'webradio':
+            break;
+        default:
+            break;
+    }
+}
 
-eadogLcd.prototype.handleBrowseUri = function (curUri) {
+ eadogLcd.prototype.replaceQueueAndPlay = function(){
+    var self = this;
+    let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+    let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
+    switch (selectedType) {
+        case 'music_service':
+        case 'radio-category':
+        case 'folder':
+        case 'song':
+        case 'playlist':
+            self.socket.emit('clearQueue');
+            self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
+            setTimeout(() => {
+                self.socket.emit('play');
+            }, 150); 
+            break;
+        case 'webradio':
+            break;
+        default:
+            break;
+    }
+}
+ eadogLcd.prototype.back = function(){
+    var self = this;
+    if (self.previousLevel != undefined) {
+        if (self.previousLevel == "/") {
+            self.socket.emit('getBrowseSources');
+        } else {
+            self.socket.emit('browseLibrary',{"uri":self.previousLevel})
+        }
+    }
+}
+eadogLcd.prototype.updateStatus = function (state){
     var self = this;
 
-    //self.commandRouter.logger.info(curUri);
-    var response;
+    if (self.state.status == undefined || state.status != self.state.status) {
+        self.display.setPageBufferLines(6,self.state.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
+    }
+    if (self.state.artist == undefined || state.artist != self.state.artist) {
+        self.display.setPageBufferLines(0,self.state.artist,self.font_prop_16px,fontStyles.normal,animationTypes.swingPage);
+    }
+    if (self.state.title == undefined || state.title != self.state.title) {
+        self.display.setPageBufferLines(0,self.state.title,self.font_prop_16px,fontStyles.normal,animationTypes.swingPage);
+    }
+    self.state.status = state.status;
+}
 
-
-    return response;
-};
-
-
-
-// Define a method to clear, add, and play an array of tracks
-eadogLcd.prototype.clearAddPlayTrack = function(track) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::clearAddPlayTrack');
-
-	self.commandRouter.logger.info(JSON.stringify(track));
-
-	return self.sendSpopCommand('uplay', [track.uri]);
-};
-
-eadogLcd.prototype.seek = function (timepos) {
-    this.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::seek to ' + timepos);
-
-    return this.sendSpopCommand('seek '+timepos, []);
-};
-
-// Stop
-eadogLcd.prototype.stop = function() {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::stop');
-
-
-};
-
-// Spop pause
-eadogLcd.prototype.pause = function() {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::pause');
-
-
-};
-
-// Get state
-eadogLcd.prototype.getState = function() {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::getState');
-
-
-};
-
-//Parse state
-eadogLcd.prototype.parseState = function(sState) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::parseState');
-
-	//Use this method to parse the state and eventually send it with the following function
-};
-
-// Announce updated State
-eadogLcd.prototype.pushState = function(state) {
-	var self = this;
-	self.commandRouter.pushConsoleMessage('[' + Date.now() + '] ' + 'eadogLcd::pushState');
-
-	return self.commandRouter.servicePushState(state, self.servicename);
-};
-
-
-eadogLcd.prototype.explodeUri = function(uri) {
-	var self = this;
-	var defer=libQ.defer();
-
-	// Mandatory: retrieve all info for a given URI
-
-	return defer.promise;
-};
-
-eadogLcd.prototype.getAlbumArt = function (data, path) {
-
-	var artist, album;
-
-	if (data != undefined && data.path != undefined) {
-		path = data.path;
-	}
-
-	var web;
-
-	if (data != undefined && data.artist != undefined) {
-		artist = data.artist;
-		if (data.album != undefined)
-			album = data.album;
-		else album = data.artist;
-
-		web = '?web=' + nodetools.urlEncode(artist) + '/' + nodetools.urlEncode(album) + '/large'
-	}
-
-	var url = '/albumart';
-
-	if (web != undefined)
-		url = url + web;
-
-	if (web != undefined && path != undefined)
-		url = url + '&';
-	else if (path != undefined)
-		url = url + '?';
-
-	if (path != undefined)
-		url = url + 'path=' + nodetools.urlEncode(path);
-
-	return url;
-};
-
-
-
-
-
-eadogLcd.prototype.search = function (query) {
-	var self=this;
-	var defer=libQ.defer();
-
-	// Mandatory, search. You can divide the search in sections using following functions
-
-	return defer.promise;
-};
-
-eadogLcd.prototype._searchArtists = function (results) {
-
-};
-
-eadogLcd.prototype._searchAlbums = function (results) {
-
-};
-
-eadogLcd.prototype._searchPlaylists = function (results) {
-
-
-};
-
-eadogLcd.prototype._searchTracks = function (results) {
-
-};
-
-eadogLcd.prototype.goto=function(data){
-    var self=this
-    var defer=libQ.defer()
-
-// Handle go to artist and go to album function
-
-     return defer.promise;
-};
+eadogLcd.prototype.refreshDisplay = async function (menuArray){
+    var self = this;
+    let pagesPerLine = self.font_prop_16px._heightBytes;
+    var style = 0;
+    if (menuArray!=undefined) {
+        for (let i = 0; i < self.maxLine; i++) {
+            if (i==self.selectedLine) {
+                style = fontStyles.inverted; //inverted
+            } else {
+                style = fontStyles.normal;  //normal
+            }
+            let item = i+ self.activePage * self.maxLine;
+            let outputLine = "                   ";
+            if (item < menuArray.length) { 
+                switch (menuArray[item].type) {
+                    case 'radio-category':
+                    case 'mywebradio-category':
+                    case 'radio-favourites':
+                    case 'folder':
+                    case 'webradio':
+                    case 'playlist':
+                        outputLine = menuArray[item].title+ "  ";                    
+                        break;
+                    case 'song':
+                        outputLine = menuArray[item].tracknumber + ") " + menuArray[i+ self.activePage * self.maxLine].title + "  ";                    
+                        break;
+                    default:
+                        outputLine = menuArray[item].name;
+                        break;
+                }
+            }
+            this.display.setPageBufferLines(i* pagesPerLine,outputLine,self.font_prop_16px,style,animationTypes.rotateStep,51);
+        }
+    }
+}
