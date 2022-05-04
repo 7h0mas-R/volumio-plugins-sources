@@ -5,12 +5,12 @@ var fs = require('fs-extra');
 var config = new (require('v-conf'))();
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
-var font = require('../../LCD/font');
-var lcd = require('../../LCD/eadog-spi-lcd')
+var font = require('font');
+var lcd = require('lcd')
 var io = require('socket.io-client');
 const { start } = require('repl');
-const fontStyles = require('../../LCD/font').fontStyle
-const animationTypes = require('../../LCD/eadog-spi-lcd').animationTypes
+const fontStyles = require('font').fontStyle
+const animationTypes = require('lcd').animationTypes
 
 const states = Object.freeze({
     starting: 0,
@@ -50,17 +50,25 @@ eadogLcd.prototype.onStart = function() {
     var self = this;
 	var defer=libQ.defer();
 
-    self.maxLine = 4
-    self.display = new lcd.TTYSimulator();
+    self.maxLine = 4;
+    if (process.platform == 'darwin') {
+        self.display = new lcd.TTYSimulator();
+    } else {
+        self.display = new lcd.DogS102();
+    }
     self.font_prop_16px = new font.Font();
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    self.socket = io.connect('http://volumio:3000');
+    if (process.platform == 'darwin') {
+        self.socket = io.connect('http://volumio:3000');
+    } else {
+        self.socket = io.connect('http://localhost');
+    }
 
     //############################### improve, path is not good
-    self.font_prop_16px.loadFontFromJSON('./LCD/Fonts_JSON/font_proportional_16px.json');
-    self.font_prop_8px.loadFontFromJSON('./LCD/Fonts_JSON/font_proportional_8px.json');
+    self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
+    self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
     self.state = 0;
     self.activePage = 0;
@@ -387,25 +395,21 @@ eadogLcd.prototype.resetMenuTimer = function () {
 }
 eadogLcd.prototype.updateStatus = function (status){
     var self = this;
-    var wasUndef = false;
     if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
     if (status == undefined) {
         status = self.status;  
-        wasUndef = true ; 
     } 
     if (self.state.artist == undefined || state.artist != self.state.artist ) {
-        self.display.setPageBufferLines(0,status.artist + '   ',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage);
+        self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
     }
     if (self.state.title == undefined || state.title != self.state.title) {
-        self.display.setPageBufferLines(2,status.title + '   ',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage);
+        self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
     }
-    if (wasUndef) {
-        self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    }
+    self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
     if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
         self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
     }
-    self.status = status;    
+    self.status = status;
 }
 
 eadogLcd.prototype.refreshDisplay = async function (){
