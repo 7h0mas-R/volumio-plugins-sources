@@ -6,9 +6,8 @@ var config = new (require('v-conf'))();
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 var font = require('font');
-var lcd = require('lcd')
+var lcd = require('lcd');
 var io = require('socket.io-client');
-const { start } = require('repl');
 const fontStyles = require('font').fontStyle
 const animationTypes = require('lcd').animationTypes
 
@@ -52,8 +51,10 @@ eadogLcd.prototype.onStart = function() {
 
     self.maxLine = 4;
     if (process.platform == 'darwin') {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load TTYSImulator');
         self.display = new lcd.TTYSimulator();
     } else {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load EA-DOG ');
         self.display = new lcd.DogS102();
     }
     self.font_prop_16px = new font.Font();
@@ -61,13 +62,15 @@ eadogLcd.prototype.onStart = function() {
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
     if (process.platform == 'darwin') {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: development system (Mac)');
         self.socket = io.connect('http://volumio:3000');
     } else {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
         self.socket = io.connect('http://localhost');
     }
 
     //############################### improve, path is not good
-    self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
+    self.font_prop_16px.loadFontFromJSON('font_proportional_16px_2.json');
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
     self.state = 0;
