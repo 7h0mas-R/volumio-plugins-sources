@@ -50,27 +50,17 @@ eadogLcd.prototype.onStart = function() {
 	var defer=libQ.defer();
 
     self.maxLine = 4;
-    if (process.platform == 'darwin') {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load TTYSImulator');
-        self.display = new lcd.TTYSimulator();
-    } else {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load EA-DOG ');
-        self.display = new lcd.DogS102();
-    }
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load EA-DOG ');
+    self.display = new lcd.DogS102();
     self.font_prop_16px = new font.Font();
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    if (process.platform == 'darwin') {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: development system (Mac)');
-        self.socket = io.connect('http://volumio:3000');
-    } else {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
-        self.socket = io.connect('http://localhost');
-    }
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
+    self.socket = io.connect('http://localhost:3000');
 
     //############################### improve, path is not good
-    self.font_prop_16px.loadFontFromJSON('font_proportional_16px_2.json');
+    self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
     self.state = 0;
@@ -168,6 +158,7 @@ eadogLcd.prototype.setConf = function(varName, varValue) {
 
 eadogLcd.prototype.activateListeners = function () {
     var self = this;
+    if (self.debugLogging) self.logger.info('[EADOG LCD] activateListeners: activating');
     self.socket.on('pushBrowseLibrary', function(data) {
         if (data.navigation != undefined && data.navigation.prev != undefined) {
             self.previousLevel = data.navigation.prev.uri;
@@ -409,9 +400,9 @@ eadogLcd.prototype.updateStatus = function (status){
         self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
     }
     self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
-        self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    }
+    // if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
+    //     self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
+    // }
     self.status = status;
 }
 

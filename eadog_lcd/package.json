@@ -33,10 +33,7 @@
 		"kew": "^0.7.0",
 		"v-conf": "^1.4.0",
 		"lcd": "git+https://github.com/7h0mas-R/LCD.git",
-		"font": "git+https://github.com/7h0mas-R/Font.git"
-	},
-	"optionalDependencies": {
-		"lcd": "file:../../LCD",
-		"font": "file:../../Font"
+		"font": "git+https://github.com/7h0mas-R/Font.git",
+		"socket.io-client": "^2.3.1"
 	}
 }

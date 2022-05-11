@@ -1,11 +1,11 @@
 {
     "startLevel": {
       "type": "string",
-      "value": "radio/favourites"
+      "value": "radio"
     },  
     "highestLevel": {
       "type": "string",
-      "value": "radio/favourites"
+      "value": "radio"
     },
     "splashScreenTimeout": {
       "type": "number",
