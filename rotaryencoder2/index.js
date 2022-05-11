@@ -921,7 +921,7 @@ rotaryencoder2.prototype.detachListener = function (handle){
         	if (self.debugLogging) self.logger.info('[ROTARYENCODER2] detachListener: successfully killed handler process');
         	defer.resolve();
         } else {
-            self.logger.error('[ROTARYENCODER2] detachListener: could not kill handler process');
+            self.logger.error('[ROTARYENCODER2] detachListener: could not kill handler process: '+handle);
             defer.reject();
         }
 
