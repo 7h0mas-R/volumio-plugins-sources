@@ -672,7 +672,7 @@ rotaryencoder2.prototype.emitDialCommand = function(val,rotaryIndex){
 					var cmdObj = {};
 					cmdObj.endpoint = self.config.get('endPointDial'+rotaryIndex);
 					cmdObj.method = self.config.get('socketCmdCW'+rotaryIndex);
-					cmdObj.data = JSON.parse(self.config.get('socketDataCW'+rotaryIndex));
+					cmdObj.data = self.config.get('socketDataCW'+rotaryIndex);
 					self.socket.emit('callMethod', cmdObj);				
 					break;
 			
@@ -703,7 +703,7 @@ rotaryencoder2.prototype.emitDialCommand = function(val,rotaryIndex){
 					var cmdObj = {};
 					cmdObj.endpoint = self.config.get('endPointDial'+rotaryIndex);
 					cmdObj.method = self.config.get('socketCmdCCW'+rotaryIndex);
-					cmdObj.data = JSON.parse(self.config.get('socketDataCCW'+rotaryIndex));
+					cmdObj.data = self.config.get('socketDataCCW'+rotaryIndex);
 					self.socket.emit('callMethod', cmdObj);				
 					break;
 			
