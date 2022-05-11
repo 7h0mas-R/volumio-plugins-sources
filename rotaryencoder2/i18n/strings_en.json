@@ -44,6 +44,8 @@
     "D_PINPUSHDEDELAY":"Minimum duration of a button press, that will trigger the long push action in ms",
     "PINDOUBLEPUSHDELAY":"Maximum interval for double press (ms)",
     "D_PINDOUBLEPUSHDEDELAY":"Time interval in ms, within which a double press has to be detected.",
+    "ENDPOINT":"Endpoint for Websocket Messages",
+    "D_ENDPOINT":"Please enter the endpoint (target) of the Websocket messages. The format is '<Plugin Category>/<PluginName>'",
     "PUSHACTION":"Short Press Action",
     "D_PUSHACTION":"Action that gets triggered, when pushbutton is pressed briefly.",
     "LONGPUSHACTION":"Long Press Action",

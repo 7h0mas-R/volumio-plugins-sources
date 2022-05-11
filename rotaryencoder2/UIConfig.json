@@ -125,6 +125,15 @@
 				]        
 			},
 			{
+			  "id":"endPointDial0",
+			  "type":"text",
+			  "element": "input",
+			  "visibleIf": {"field": "dialAction0", "value": 4},
+			  "label": "TRANSLATE.ROTARYENCODER2.ENDPOINT",
+			  "doc": "TRANSLATE.ROTARYENCODER2.D_ENDPOINT",
+			  "value": ""
+			},
+			{
 			  "id":"socketCmdCCW0",
 			  "type":"text",
 			  "element": "input",
@@ -580,6 +589,15 @@
 				]        
 			},
 			{
+			  "id":"endPointDial1",
+			  "type":"text",
+			  "element": "input",
+			  "visibleIf": {"field": "dialAction1", "value": 4},
+			  "label": "TRANSLATE.ROTARYENCODER2.ENDPOINT",
+			  "doc": "TRANSLATE.ROTARYENCODER2.D_ENDPOINT",
+			  "value": ""
+			},
+			{
 			  "id":"socketCmdCCW1",
 			  "type":"text",
 			  "element": "input",
@@ -1033,6 +1051,15 @@
 					"label": "TRANSLATE.ROTARYENCODER2.EMIT"
 				}
 				]        
+			},
+			{
+			  "id":"endPointDial2",
+			  "type":"text",
+			  "element": "input",
+			  "visibleIf": {"field": "dialAction2", "value": 4},
+			  "label": "TRANSLATE.ROTARYENCODER2.ENDPOINT",
+			  "doc": "TRANSLATE.ROTARYENCODER2.D_ENDPOINT",
+			  "value": ""
 			},
 			{
 			  "id":"socketCmdCCW2",

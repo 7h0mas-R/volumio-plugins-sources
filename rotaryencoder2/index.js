@@ -181,27 +181,28 @@ rotaryencoder2.prototype.getUIConfig = function() {
 				uiconf.sections[i].content[3].value = parseInt(self.config.get('pinB' + i)) | 0;
 				uiconf.sections[i].content[4].value.value = self.config.get('dialAction' + i) | 0;
 				uiconf.sections[i].content[4].value.label = self.getI18nString('ROTARYENCODER2.'+dialActions[parseInt(self.config.get('dialAction' + i))|0]);
-				uiconf.sections[i].content[5].value = self.config.get('socketCmdCCW' + i);
-				uiconf.sections[i].content[6].value = self.config.get('socketDataCCW' + i);
-				uiconf.sections[i].content[7].value = self.config.get('socketCmdCW' + i);
-				uiconf.sections[i].content[8].value = self.config.get('socketDataCW' + i);
-				uiconf.sections[i].content[9].value = parseInt(self.config.get('pinPush' + i)) | 0;
-				uiconf.sections[i].content[10].value = parseInt(self.config.get('pinPushDebounce' + i)) | 0;
-				uiconf.sections[i].content[11].value = (self.config.get('pushState' + i)==true)
-				uiconf.sections[i].content[12].value.value = self.config.get('pushAction' + i) | 0;
-				uiconf.sections[i].content[12].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('pushAction' + i))|0]);
-				uiconf.sections[i].content[13].value = self.config.get('socketCmdPush' + i);
-				uiconf.sections[i].content[14].value = self.config.get('socketDataPush' + i);
-				uiconf.sections[i].content[15].value.value = self.config.get('longPushAction' + i) | 0;
-				uiconf.sections[i].content[15].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('longPushAction' + i))|0]);
-				uiconf.sections[i].content[16].value = self.config.get('socketCmdLongPush' + i);
-				uiconf.sections[i].content[17].value = self.config.get('socketDataLongPush' + i);
-				uiconf.sections[i].content[18].value = self.config.get('delayLongPush' + i);
-				uiconf.sections[i].content[19].value.value = self.config.get('doublePushAction' + i) | 0;
-				uiconf.sections[i].content[19].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('doublePushAction' + i))|0]);
-				uiconf.sections[i].content[20].value = self.config.get('socketCmdDoublePush' + i);
-				uiconf.sections[i].content[21].value = self.config.get('socketDataDoublePush' + i);
-				uiconf.sections[i].content[22].value = self.config.get('delayDoublePush' + i);
+				uiconf.sections[i].content[5].value = self.config.get('endPointDial' + i);
+				uiconf.sections[i].content[6].value = self.config.get('socketCmdCCW' + i);
+				uiconf.sections[i].content[7].value = self.config.get('socketDataCCW' + i);
+				uiconf.sections[i].content[8].value = self.config.get('socketCmdCW' + i);
+				uiconf.sections[i].content[9].value = self.config.get('socketDataCW' + i);
+				uiconf.sections[i].content[10].value = parseInt(self.config.get('pinPush' + i)) | 0;
+				uiconf.sections[i].content[11].value = parseInt(self.config.get('pinPushDebounce' + i)) | 0;
+				uiconf.sections[i].content[12].value = (self.config.get('pushState' + i)==true)
+				uiconf.sections[i].content[13].value.value = self.config.get('pushAction' + i) | 0;
+				uiconf.sections[i].content[13].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('pushAction' + i))|0]);
+				uiconf.sections[i].content[14].value = self.config.get('socketCmdPush' + i);
+				uiconf.sections[i].content[15].value = self.config.get('socketDataPush' + i);
+				uiconf.sections[i].content[16].value.value = self.config.get('longPushAction' + i) | 0;
+				uiconf.sections[i].content[16].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('longPushAction' + i))|0]);
+				uiconf.sections[i].content[17].value = self.config.get('socketCmdLongPush' + i);
+				uiconf.sections[i].content[18].value = self.config.get('socketDataLongPush' + i);
+				uiconf.sections[i].content[19].value = self.config.get('delayLongPush' + i);
+				uiconf.sections[i].content[20].value.value = self.config.get('doublePushAction' + i) | 0;
+				uiconf.sections[i].content[20].value.label = self.getI18nString('ROTARYENCODER2.'+btnActions[parseInt(self.config.get('doublePushAction' + i))|0]);
+				uiconf.sections[i].content[21].value = self.config.get('socketCmdDoublePush' + i);
+				uiconf.sections[i].content[22].value = self.config.get('socketDataDoublePush' + i);
+				uiconf.sections[i].content[23].value = self.config.get('delayDoublePush' + i);
 			}
 			//logging section
 			uiconf.sections[maxRotaries].content[0].value = (self.config.get('logging')==true)
@@ -246,6 +247,7 @@ rotaryencoder2.prototype.updateEncoder = function(data){
 			self.config.set('pinA'+rotaryIndex, (data['pinA'+rotaryIndex]));
 			self.config.set('pinB'+rotaryIndex, (data['pinB'+rotaryIndex]));
 			self.config.set('dialAction'+rotaryIndex, (data['dialAction'+rotaryIndex].value));
+			self.config.set('endPointDial'+rotaryIndex, (data['endPointDial'+rotaryIndex].value));
 			self.config.set('socketCmdCCW'+rotaryIndex, (data['socketCmdCCW'+rotaryIndex]));
 			self.config.set('socketDataCCW'+rotaryIndex, (data['socketDataCCW'+rotaryIndex]));
 			self.config.set('socketCmdCW'+rotaryIndex, (data['socketCmdCW'+rotaryIndex]));
@@ -667,7 +669,11 @@ rotaryencoder2.prototype.emitDialCommand = function(val,rotaryIndex){
 					break;
 			
 				case dialActions.indexOf("EMIT"): //4
-					self.socket.emit(self.config.get('socketCmdCW'+rotaryIndex), self.config.get('socketDataCW'+rotaryIndex));				
+					var cmdObj = {};
+					cmdObj.endpoint = self.config.get('endPointDial'+rotaryIndex);
+					cmdObj.method = self.config.get('socketCmdCW'+rotaryIndex);
+					cmdObj.data = JSON.parse(self.config.get('socketDataCW'+rotaryIndex));
+					self.socket.emit('callMethod', cmdObj);				
 					break;
 			
 				default:
@@ -694,7 +700,11 @@ rotaryencoder2.prototype.emitDialCommand = function(val,rotaryIndex){
 					break;
 			
 				case dialActions.indexOf("EMIT"): //4
-					self.socket.emit(self.config.get('socketCmdCCW'+rotaryIndex), self.config.get('socketDataCCW'+rotaryIndex));				
+					var cmdObj = {};
+					cmdObj.endpoint = self.config.get('endPointDial'+rotaryIndex);
+					cmdObj.method = self.config.get('socketCmdCCW'+rotaryIndex);
+					cmdObj.data = JSON.parse(self.config.get('socketDataCCW'+rotaryIndex));
+					self.socket.emit('callMethod', cmdObj);				
 					break;
 			
 				default:

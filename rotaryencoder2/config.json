@@ -19,6 +19,10 @@
       "type": "number",
       "value": 0
     },
+    "endPointDial0": {
+      "type": "string",
+      "value": ""
+    },
     "socketCmdCW0": {
       "type": "string",
       "value": ""
@@ -111,6 +115,10 @@
       "type": "number",
       "value": 0
     },
+    "endPointDial1": {
+      "type": "string",
+      "value": ""
+    },
     "socketCmdCW1": {
       "type": "string",
       "value": ""
@@ -202,6 +210,10 @@
     "dialAction2": {
       "type": "number",
       "value": 0
+    },
+    "endPointDial2": {
+      "type": "string",
+      "value": ""
     },
     "socketCmdCW2": {
       "type": "string",

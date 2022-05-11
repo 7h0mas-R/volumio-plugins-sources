@@ -50,6 +50,8 @@
     "D_PINPUSHDEDELAY":"Zeit in ms, die man den Taster gedrückt halten muss, um die Aktion für den langen Tastendruck auszulösen",
     "PINDOUBLEPUSHDELAY":"Maximale Zeit zwischen doppelten Tastendrücken (ms)",
     "D_PINDOUBLEPUSHDEDELAY":"Zeit in ms, innerhalb der zwei Tastendrücke passieren müssen",
+    "ENDPOINT":"Endpoint für Websocket Nachrichten",
+    "D_ENDPOINT":"Bitte hier den Endpoint (das Ziel) für die Websocket Nachricht eingeben. Das Format ist '<Plugin Kategorie>/<PluginName>'",
     "SET_DEBUG":"Fehlerdiagnose Einstellungen",
     "D_SET_DEBUG":"Einstellungen zur Unterstützung der Fehlersuche.",
     "PLAY":"Wiedergabe starten",
