@@ -51,19 +51,29 @@ eadogLcd.prototype.onStart = function() {
 
     self.maxLine = 4;
     if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load EA-DOG ');
-    self.display = new lcd.DogS102();
+    if (process.platform != 'darwin'){
+        self.display = new lcd.DogS102();
+    } else {
+        self.display = new lcd.TTYSimulator();
+    }
     self.font_prop_16px = new font.Font();
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
-    self.socket = io.connect('http://localhost:3000');
+    if (process.platform != 'darwin') {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
+        self.socket = io.connect('http://localhost:3000');
+    } else {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Mac');
+        self.socket = io.connect('http://volumio:3000');
+    }
 
     //############################### improve, path is not good
     self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
     self.state = 0;
+    self.status = {};
     self.activePage = 0;
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
@@ -80,13 +90,16 @@ eadogLcd.prototype.onStart = function() {
         setTimeout(() => {
             if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
             self.display.clear()
-            .then(_=>self.activateListeners());
+            .then(_=>self.activateListeners())
         }, timeout)
     })    
 
 	// Once the Plugin has successfull started resolve the promise
-    .then(_ => defer.resolve())
-    .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
+    .then(_ =>  {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: successfully started plugin');
+        defer.resolve();
+    })
+    // .fail(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
 
     return defer.promise;
 };
@@ -218,6 +231,7 @@ eadogLcd.prototype.up = function(){
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -240,6 +254,7 @@ eadogLcd.prototype.down = function(){
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -274,6 +289,7 @@ eadogLcd.prototype.down = function(){
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -305,6 +321,7 @@ eadogLcd.prototype.down = function(){
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -339,6 +356,7 @@ eadogLcd.prototype.down = function(){
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -350,20 +368,21 @@ eadogLcd.prototype.down = function(){
     switch (self.state) {
         case states.menu:
             if (self.previousLevel != undefined) {
-                if (self.previousLevel == "/") {
-                    self.currentLevel = "/";
-                    self.socket.emit('getBrowseSources');
-                } else {
-                    if (self.currentLevel != self.config.get('highestLevel')) {
+                if (self.currentLevel != self.config.get('highestLevel')) {
+                    if (self.previousLevel == "/") {
+                        self.currentLevel = "/";
+                        self.socket.emit('getBrowseSources');
+                    } else {
                         self.currentLevel = self.previousLevel;
+                        self.socket.emit('browseLibrary',{"uri":self.currentLevel})
                     }
-                    self.socket.emit('browseLibrary',{"uri":self.currentLevel})
                 }
             }
             break;
     
         default:
             self.state = states.menu;
+            self.status = {};
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -389,21 +408,20 @@ eadogLcd.prototype.resetMenuTimer = function () {
 }
 eadogLcd.prototype.updateStatus = function (status){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
-    if (status == undefined) {
-        status = self.status;  
+    if (status != undefined) {
+        if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
+        if ((self.status.artist == undefined || status.artist != self.status.artist) && status != undefined && status.artist !=undefined ) {
+            self.display.setPageBufferLines(0,status.artist || '',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+        }
+        if ((self.status.title == undefined || status.title != self.status.title) && status != undefined && status.title!=undefined) {
+            self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+        }
+        self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
+        if ((self.status.status == undefined || status.status != self.status.status) && status != undefined && status.status!=undefined) {
+            self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
+        }
+        self.status = status;
     } 
-    if (self.state.artist == undefined || state.artist != self.state.artist ) {
-        self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
-    }
-    if (self.state.title == undefined || state.title != self.state.title) {
-        self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
-    }
-    self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    // if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
-    //     self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    // }
-    self.status = status;
 }
 
 eadogLcd.prototype.refreshDisplay = async function (){
