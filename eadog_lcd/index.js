@@ -49,22 +49,24 @@ eadogLcd.prototype.onStart = function() {
     var self = this;
 	var defer=libQ.defer();
 
+    self.debugLogging = (self.config.get('logging')==true);
     self.maxLine = 4;
     if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: load EA-DOG ');
     if (process.platform != 'darwin'){
+    	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: generating LCD display on platform ' + process.platform);
         self.display = new lcd.DogS102();
     } else {
+    	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: generating TTY simulator on platform ' + process.platform);
         self.display = new lcd.TTYSimulator();
     }
     self.font_prop_16px = new font.Font();
     self.font_prop_8px = new font.Font();
-    self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
     if (process.platform != 'darwin') {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Volumio');
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: connect socket on Volumio, platform ' + process.platform);
         self.socket = io.connect('http://localhost:3000');
     } else {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: on Mac');
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: connect socket to Volumio from Mac, platform ' + process.platform);
         self.socket = io.connect('http://volumio:3000');
     }
 
@@ -85,7 +87,7 @@ eadogLcd.prototype.onStart = function() {
     .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
     .then(_ => self.display.startAnimation(1000))
     .then(_ => {
-        let timeout = parseInt(self.config.get('splashScreenTimeout'));
+        let timeout = 1000 * parseInt(self.config.get('splashScreenTimeout'));
         if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
         setTimeout(() => {
             if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
@@ -409,15 +411,15 @@ eadogLcd.prototype.resetMenuTimer = function () {
 eadogLcd.prototype.updateStatus = function (status){
     var self = this;
     if (status != undefined) {
-        if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
-        if ((self.status.artist == undefined || status.artist != self.status.artist) && status != undefined && status.artist !=undefined ) {
+        if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + JSON.stringify(status));
+        if (status.artist !=undefined && (self.status.artist == undefined || status.artist != self.status.artist) ) {
             self.display.setPageBufferLines(0,status.artist || '',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
         }
-        if ((self.status.title == undefined || status.title != self.status.title) && status != undefined && status.title!=undefined) {
+        if (status.title!=undefined && (self.status.title == undefined || status.title != self.status.title) ) {
             self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
         }
         self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-        if ((self.status.status == undefined || status.status != self.status.status) && status != undefined && status.status!=undefined) {
+        if (status.status!=undefined && (self.status.status == undefined || status.status != self.status.status)) {
             self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
         }
         self.status = status;

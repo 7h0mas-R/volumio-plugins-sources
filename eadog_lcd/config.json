@@ -9,7 +9,7 @@
     },
     "splashScreenTimeout": {
       "type": "number",
-      "value": "2000"
+      "value": "10"
     },
     "menuTimeout": {
       "type": "number",
@@ -17,6 +17,6 @@
     },  
     "logging": {
       "type": "boolean",
-      "value": false
+      "value": true
     }
 }
