@@ -60,11 +60,8 @@ eadogLcd.prototype.onStart = function() {
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    if (process.platform == 'darwin') {
-        self.socket = io.connect('http://volumio:3000');
-    } else {
-        self.socket = io.connect('http://localhost');
-    }
+    self.socket = io.connect('http://volumio:3000');
+    self.activateListeners();
 
     //############################### improve, path is not good
     self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
@@ -360,24 +357,13 @@ eadogLcd.prototype.resetMenuTimer = function () {
     if (self.state.status == undefined || state.status != self.state.status) {
         self.display.setPageBufferLines(6,self.state.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
     }
-}
-eadogLcd.prototype.updateStatus = function (status){
-    var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
-    if (status == undefined) {
-        status = self.status;  
-    } 
-    if (self.state.artist == undefined || state.artist != self.state.artist ) {
-        self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+    if (self.state.artist == undefined || state.artist != self.state.artist) {
+        self.display.setPageBufferLines(0,self.state.artist,self.font_prop_16px,fontStyles.normal,animationTypes.swingPage);
     }
     if (self.state.title == undefined || state.title != self.state.title) {
-        self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+        self.display.setPageBufferLines(2,status.title + '   ',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage);
     }
-    self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
-        self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    }
-    self.status = status;
+    self.state.status = state.status;
 }
 
 eadogLcd.prototype.refreshDisplay = async function (){
