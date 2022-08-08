@@ -60,11 +60,8 @@ eadogLcd.prototype.onStart = function() {
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    if (process.platform == 'darwin') {
-        self.socket = io.connect('http://volumio:3000');
-    } else {
-        self.socket = io.connect('http://localhost');
-    }
+    self.socket = io.connect('http://volumio:3000');
+    self.activateListeners();
 
     //############################### improve, path is not good
     self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
@@ -288,67 +285,45 @@ eadogLcd.prototype.down = function(){
 
  eadogLcd.prototype.addToQueueAndPlay = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] addToQueueAndPlay: Received command in status:' + self.state)
-    switch (self.state) {
-        case states.menu:
-            let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
-            let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
-            switch (selectedType) {
-                case 'music_service':
-                case 'radio-category':
-                case 'folder':
-                case 'song':
-                case 'playlist':
-                    self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
-                    self.socket.emit('play')
-                    break;
-                case 'webradio':
-                    break;
-                default:
-                    break;
-            }
+    let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+    let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
+    switch (selectedType) {
+        case 'music_service':
+        case 'radio-category':
+        case 'folder':
+        case 'song':
+        case 'playlist':
+            self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
+            self.socket.emit('play')
             break;
-    
+        case 'webradio':
+            break;
         default:
-            self.state = states.menu;
-            self.refreshDisplay(self.menuItems)
             break;
     }
-    self.resetMenuTimer();
 }
 
  eadogLcd.prototype.replaceQueueAndPlay = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] replaceQueueAndPlay: Received command in status:' + self.state)
-    switch (self.state) {
-        case states.menu:
-            let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
-            let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
-            switch (selectedType) {
-                case 'music_service':
-                case 'radio-category':
-                case 'folder':
-                case 'song':
-                case 'playlist':
-                    self.socket.emit('clearQueue');
-                    self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
-                    setTimeout(() => {
-                        self.socket.emit('play');
-                    }, 150); 
-                    break;
-                case 'webradio':
-                    break;
-                default:
-                    break;
-            }
+    let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
+    let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
+    switch (selectedType) {
+        case 'music_service':
+        case 'radio-category':
+        case 'folder':
+        case 'song':
+        case 'playlist':
+            self.socket.emit('clearQueue');
+            self.socket.emit('addToQueue',{"uri":self.menuItems[selectedItem].uri});
+            setTimeout(() => {
+                self.socket.emit('play');
+            }, 150); 
             break;
-    
+        case 'webradio':
+            break;
         default:
-            self.state = states.menu;
-            self.refreshDisplay(self.menuItems)
             break;
     }
-    self.resetMenuTimer();
 }
  eadogLcd.prototype.back = function(){
     var self = this;
@@ -378,38 +353,17 @@ eadogLcd.prototype.down = function(){
 
 eadogLcd.prototype.resetMenuTimer = function () {
     var self = this;
-    if (self.menuTimer == undefined) {
-        self.menuTimeout = self.config.get('menuTimeout')*1000;
-        if (self.debugLogging) this.logger.info('[EADOG_LCD] resetMenuTimer: creating new Timer')
-        self.menuTimer = setTimeout(() => {
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] resetMenuTimer: menu Timeout elapsed on Timer: ' + self.menuTimer)
-            clearTimeout(self.menuTimer);
-            self.menuTimer = null;
-            self.state = states.status;
-            self.refreshDisplay(self.menuItems);
-        }, self.menuTimeout);
-    } else {
-        if (self.debugLogging) this.logger.info('[EADOG_LCD] resetMenuTimer: restarting Timer: ' + self.menuTimer)
-        self.menuTimer.refresh();
+
+    if (self.state.status == undefined || state.status != self.state.status) {
+        self.display.setPageBufferLines(6,self.state.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
     }
-}
-eadogLcd.prototype.updateStatus = function (status){
-    var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
-    if (status == undefined) {
-        status = self.status;  
-    } 
-    if (self.state.artist == undefined || state.artist != self.state.artist ) {
-        self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+    if (self.state.artist == undefined || state.artist != self.state.artist) {
+        self.display.setPageBufferLines(0,self.state.artist,self.font_prop_16px,fontStyles.normal,animationTypes.swingPage);
     }
     if (self.state.title == undefined || state.title != self.state.title) {
-        self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
+        self.display.setPageBufferLines(2,status.title + '   ',self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage);
     }
-    self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
-        self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    }
-    self.status = status;
+    self.state.status = state.status;
 }
 
 eadogLcd.prototype.refreshDisplay = async function (){
