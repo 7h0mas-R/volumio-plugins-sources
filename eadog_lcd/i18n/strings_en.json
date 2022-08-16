@@ -1,4 +1,27 @@
 {
-  "PLUGIN_CONFIGURATION":"Example Plugin Configuration",
-  "SAVE":"Save"
+  "EADOG_LCD":
+    {  
+      "CONFIG":"EA DOG LCD Configuration",
+      "INTERFACESETTINGS": "SPI Interface Settings",
+      "D_INTERFACESETTINGS": "Configure the hardware connection of the LCD display",
+      "SPIDEV": "SPI Device",
+      "D_SPIDEV": "Select the SPI Bus and Device Number for the LCD",
+      "RSTPIN": "Reset Pin GPIO",
+      "D_RSTPIN": "GPIO # of the RPi, that is connected to the reset pin of the LCD.",
+      "CDPIN": "CD Pin GPIO",
+      "D_CDPIN": "GPIO # of the RPi, that is connected to the CD pin (Cmd/Data) of the LCD.",
+      "SPEEDHZ": "Clock Speed (Hz)",
+      "D_SPEEDHZ": "Clock frequency of the LCD in Hertz. Maximum is limited to the specified max of the selected Display.",
+      "BACKLIGHTPIN": "Backlight Enable GPIO",
+      "D_BACKLIGHTPIN": "If you have a switchable backlight configured, you can provide the GPIO pin here for automatic backlight switching. If not, put to 0.",
+      "SAVE":"Save",
+      "LCDSETTINGS": "LCD Settings",
+      "D_LCDSETTINGS": "Settings for the LCD Display",
+      "LCDTYPE": "LCD Type",
+      "D_LCDTYPE": "Electronic Assembly DOG Series Display model",
+      "INVERTED": "Inverted",
+      "D_INVERTED": "Invert the display content of the LCD",
+      "UPSIDEDOWN": "Flip Display",
+      "D_UPSIDEDOWN": "Rotate the display content by 180 degrees for cases where the display is built in upside-down"
+    }
 }

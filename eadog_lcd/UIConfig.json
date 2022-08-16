@@ -1,7 +1,121 @@
 {
   "page": {
-    "label": "TRANSLATE.PLUGIN_CONFIGURATION"
+    "label": "TRANSLATE.EADOG_LCD.CONFIG"
   },
   "sections": [
+    {
+      "id": "interfaceSettings",
+      "element": "section",
+      "label": "TRANSLATE.EADOG_LCD.INTERFACESETTINGS",
+      "description": "TRANSLATE.EADOG_LCD.D_INTERFACESETTINGS",
+      "icon": "fa-wrench",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "system_hardware/eadog_lcd",
+        "method": "updateSPISettings"
+      },
+      "saveButton": {
+        "label": "TRANSLATE.EADOG_LCD.SAVE",
+        "data": [
+        ]
+      },
+      "content": [
+        {
+          "id": "spiDev",
+          "element": "select",
+          "label": "TRANSLATE.EADOG_LCD.SPIDEV",
+          "doc": "TRANSLATE.EADOG_LCD.D_SPIDEV",
+          "value": {"value": 0, "label": "SPI0.0"},
+          "options": [
+            {
+              "value": 0,
+              "label": "SPI0.0"
+            },
+            {
+              "value": 1,
+              "label": "SPI0.1"
+            }
+          ]
+        },
+        {
+          "id": "rstPin",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.RSTPIN",
+          "doc": "TRANSLATE.EADOG_LCD.D_RSTPIN",
+          "value": 0
+        },
+        {
+          "id": "cdPin",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.CDPIN",
+          "doc": "TRANSLATE.EADOG_LCD.D_CDPIN",
+          "value": 0
+        },
+        {
+          "id": "speedHz",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.SPEEDHZ",
+          "doc": "TRANSLATE.EADOG_LCD.D_SPEEDHZ",
+          "value": 0
+        },
+        {
+          "id": "backlightPin",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.BACKLIGHTPIN",
+          "doc": "TRANSLATE.EADOG_LCD.D_BACKLIGHTPIN",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "lcdSettings",
+      "element": "section",
+      "label": "TRANSLATE.EADOG_LCD.LCDSETTINGS",
+      "description": "TRANSLATE.EADOG_LCD.D_LCDSETTINGS",
+      "icon": "fa-eye",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "system_hardware/eadog_lcd",
+        "method": "updateLCDSettings"
+      },
+      "saveButton": {
+        "label": "TRANSLATE.EADOG_LCD.SAVE",
+        "data": [
+        ]
+      },
+      "content": [
+        {
+          "id": "lcdType",
+          "element": "select",
+          "label": "TRANSLATE.EADOG_LCD.LCDTYPE",
+          "doc": "TRANSLATE.EADOG_LCD.D_LCDTYPE",
+          "value": {"value": 0, "label": "DOGS102"},
+          "options": [
+            {"value": 0, "label": "DOGS102"},
+            {"value": 1, "label": "DOGM132"},
+            {"value": 2, "label": "DOGM128"},
+            {"value": 3, "label": "DOGL128"}
+          ]
+        },
+        {
+          "id": "lcdInverted",
+          "element": "switch",
+          "label": "TRANSLATE.EADOG_LCD.INVERTED",
+          "doc": "TRANSLATE.EADOG_LCD.D_INVERTED",
+          "value": 0
+        },
+        {
+          "id": "lcdUpsideDown",
+          "element": "switch",
+          "label": "TRANSLATE.EADOG_LCD.UPSIDEDOWN",
+          "doc": "TRANSLATE.EADOG_LCD.D_UPSIDEDOWN",
+          "value": 0
+        }
+      ]
+    }
   ]
 }

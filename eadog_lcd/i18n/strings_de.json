@@ -1,0 +1,27 @@
+{
+  "EADOG_LCD":
+    {  
+      "CONFIG":"EA DOG LCD Konfiguration",
+      "INTERFACESETTINGS": "SPI Schnittstellen Einstellungen",
+      "D_INTERFACESETTINGS": "Konfigurieren der Hardware-Schnittstelle des LCD Displays",
+      "SPIDEV": "SPI Gerät",
+      "D_SPIDEV": "SPI Bus und Gerätenummer für das LCD bestimmen",
+      "RSTPIN": "Reset Pin GPIO",
+      "D_RSTPIN": "GPIO # am RPi, der mit dem Reset-Pin am LCD verbunden ist.",
+      "CDPIN": "CD Pin GPIO",
+      "D_CDPIN": "GPIO # am RPi, der mit dem CD pin (Kommandos/Daten) am LCD verbunden ist.",
+      "SPEEDHZ": "Bus-Takt (Hz)",
+      "D_SPEEDHZ": "Taktfrequenz des SPI-Bus des LCD Displays in Hertz. Der Maximalwert wird durch den gewählten Displaytyp bestimmt.",
+      "BACKLIGHTPIN": "Hintergrundbeleuchtung GPIO",
+      "D_BACKLIGHTPIN": "Wenn das LCD mit Hintergrundbeleuchtung versehen ist und diese über einen Digitalen Pin schaltbar ist, kann hier der GPIO des digitalen Pins angegeben werden. Falls nicht benötigt, einfach auf 0 setzen.",
+      "SAVE":"Speichern",
+      "LCDSETTINGS": "LCD Einstellungen",
+      "D_LCDSETTINGS": "Einstellungen für das LCD Display",
+      "LCDTYPE": "LCD Typ",
+      "D_LCDTYPE": "Model des Displays aus der Electronic Assembly DOG Serie",
+      "INVERTED": "Invertiert",
+      "D_INVERTED": "Invertierte Darstellung des LCD Inhalts",
+      "UPSIDEDOWN": "Display Inhalt drehen",
+      "D_UPSIDEDOWN": "Dreht den Display Inhalt um 180°, falls das Display über Kopf montiert ist."
+    }
+}
