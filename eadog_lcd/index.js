@@ -51,6 +51,8 @@ eadogLcd.prototype.onStart = function() {
 	var defer=libQ.defer();
 
     self.maxLine = 4;
+    self.SPIDevices = {};
+	self.loadI18nStrings(); 
     if (process.platform == 'darwin') {
         self.display = new lcd.TTYSimulator();
     } else {
@@ -90,6 +92,7 @@ eadogLcd.prototype.onStart = function() {
             .then(_=>self.activateListeners());
         }, timeout)
     })    
+    .then(_=> self.listSPIDevices()) //get list of available SPI devices
 
 	// Once the Plugin has successfull started resolve the promise
     .then(_ => defer.resolve())
@@ -132,12 +135,44 @@ eadogLcd.prototype.getUIConfig = function() {
         __dirname + '/UIConfig.json')
         .then(function(uiconf)
         {
-
-
+            //SPI interface section
+            var spiFromConfig = self.config.get('spiDev')
+            var selected = 0;
+            if (self.debugLogging) self.logger.info('[EADOG LCD] getUIConfig: Populating pull-down with ' + JSON.stringify(self.SPIDevices) + "  and selecting '" + spiFromConfig +  "'.'");
+            for (var n = 0; n < self.SPIDevices.length; n++)
+            {
+                self.configManager.pushUIConfigParam(uiconf, 'sections[0].content[0].options', {
+                    value: n+1,
+                    label: self.SPIDevices[n]
+                });
+                if (self.SPIDevices[n] == spiFromConfig) {
+                    selected = n+1;
+                }
+            };
+            if (selected > 0) {
+                uiconf.sections[0].content[0].value.value = selected;
+                uiconf.sections[0].content[0].value.label = spiFromConfig;                
+            }
+			uiconf.sections[0].content[1].value = (self.config.get('rstPin'));
+			uiconf.sections[0].content[2].value = (self.config.get('cdPin'));
+			uiconf.sections[0].content[3].value = (self.config.get('speedHz'));
+			uiconf.sections[0].content[4].value = (self.config.get('backlightPin'));
+            //LCD settings section
+			uiconf.sections[1].content[0].value = (self.config.get('lcdType'));
+			uiconf.sections[1].content[1].value = (self.config.get('lcdInverted'));
+			uiconf.sections[1].content[2].value = (self.config.get('lcdUpsideDown'));
+            //Navigation settings section
+			uiconf.sections[2].content[0].value = (self.config.get('startLevel'));
+			uiconf.sections[2].content[1].value = (self.config.get('highestLevel'));
+			uiconf.sections[2].content[2].value = (self.config.get('menuTimeout'));
+			uiconf.sections[2].content[3].value = (self.config.get('splashScreenTimeout'));
+            //Debug settings section
+			uiconf.sections[3].content[0].value = (self.config.get('logging'));
             defer.resolve(uiconf);
         })
         .fail(function()
         {
+            self.logger.error('[EADOG_LCD] getUIConfig: failed');
             defer.reject(new Error());
         });
 
@@ -423,3 +458,103 @@ eadogLcd.prototype.refreshDisplay = async function (){
             break;
     }
 }
+
+//read SPI devices available on RPi and store in self.SPIDevices
+eadogLcd.prototype.listSPIDevices = function() {
+    var self = this;
+    var defer = libQ.defer();
+
+    //read SPI devices with fs-extra.readdirSync because fs-extra.readdir returns "undefined" instead of a promise
+    self.SPIDevices = fs.readdirSync('/dev').filter(file => file.startsWith('spidev'));
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] listSPIDevices: found ' + self.SPIDevices.length + ' devices.' + JSON.stringify(self.SPIDevices));
+    if (self.SPIDevices.length > 0) {
+        defer.resolve();
+    } else {
+        self.logger.error('[EADOG_LCD] listSPIDevices: Cannot get list of serial devices - ')
+        defer.reject();
+    }
+    return defer.promise;
+};
+
+eadogLcd.prototype.updateSPISettings = function (data) {
+    var self = this;
+    var defer = libQ.defer();
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] updateSPISettings: Saving SPI Settings:' + JSON.stringify(data));
+    self.config.set('spiDev', data['spiDev'].label);
+    self.config.set('rstPin', parseInt(data['rstPin']));
+    self.config.set('cdPin', parseInt(data['cdPin']));
+    self.config.set('speedHz', parseInt(data['speedHz']));
+    self.config.set('backlightPin', parseInt(data['backlightPin']));
+    defer.resolve();
+    self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_SAVE_SUCCESS'), self.getI18nString('TOAST_SPI_SAVE'));
+    return defer.promise;
+};
+
+eadogLcd.prototype.updateLCDSettings = function (data) {
+    var self = this;
+    var defer = libQ.defer();
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] updateLCDSettings: Saving LCD Settings:' + JSON.stringify(data));
+    self.config.set('lcdType', data['lcdType'].label);
+    self.config.set('lcdInverted', (data['lcdInverted']));
+    self.config.set('lcdUpsideDown', (data['lcdUpsideDown']));
+    defer.resolve();
+    self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_SAVE_SUCCESS'), self.getI18nString('TOAST_LCD_SAVE'));
+    return defer.promise;
+};
+
+eadogLcd.prototype.updateNavigationSettings = function (data) {
+    var self = this;
+    var defer = libQ.defer();
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] updateNavigationSettings: Saving LCD Settings:' + JSON.stringify(data));
+    self.config.set('startLevel', data['startLevel']);
+    self.config.set('highestLevel', (data['highestLevel']));
+    self.config.set('menuTimeout', (data['menuTimeout']));
+    self.config.set('splashScreenTimeout', (data['splashScreenTimeout']));
+    defer.resolve();
+    self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_SAVE_SUCCESS'), self.getI18nString('TOAST_NAVIGATION_SAVE'));
+    return defer.promise;
+};
+
+eadogLcd.prototype.updateDebugSettings = function (data) {
+    var self = this;
+    var defer = libQ.defer();
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] updateDebugSettings: Saving Debug Settings:' + JSON.stringify(data));
+    self.config.set('logging', (data['logging']))
+    self.debugLogging = data['logging'];
+    defer.resolve();
+    self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_SAVE_SUCCESS'), self.getI18nString('TOAST_DEBUG_SAVE'));
+    return defer.promise;
+};
+
+
+// Retrieve a string
+eadogLcd.prototype.getI18nString = function (key) {
+    var self = this;
+
+    if (self.i18nStrings[key] !== undefined) {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'"):'+ self.i18nStrings[key]);
+        return self.i18nStrings[key];
+    } else {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'")'+ self.i18nStringsDefaults[key]);
+        return self.i18nStringsDefaults['EADOG_LCD'][key];
+    };
+}
+
+// A method to get some language strings used by the plugin
+eadogLcd.prototype.loadI18nStrings = function() {
+    var self = this;
+
+    try {
+        var language_code = this.commandRouter.sharedVars.get('language_code');
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] loadI18nStrings: '+__dirname + '/i18n/strings_' + language_code + ".json");
+        self.i18nStrings = fs.readJsonSync(__dirname + '/i18n/strings_' + language_code + ".json");
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] loadI18nStrings: loaded: '+JSON.stringify(self.i18nStrings));
+    }
+    catch (e) {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] loadI18nStrings: ' + language_code + ' not found. Fallback to en');
+        self.i18nStrings = fs.readJsonSync(__dirname + '/i18n/strings_en.json');
+    }
+
+    self.i18nStringsDefaults = fs.readJsonSync(__dirname + '/i18n/strings_en.json');
+};
+

@@ -17,6 +17,11 @@
       "saveButton": {
         "label": "TRANSLATE.EADOG_LCD.SAVE",
         "data": [
+          "spiDev",
+          "rstPin",
+          "cdPin",
+          "speedHz",
+          "backlightPin"
         ]
       },
       "content": [
@@ -25,15 +30,11 @@
           "element": "select",
           "label": "TRANSLATE.EADOG_LCD.SPIDEV",
           "doc": "TRANSLATE.EADOG_LCD.D_SPIDEV",
-          "value": {"value": 0, "label": "SPI0.0"},
+          "value": {"value": 0, "label": "..."},
           "options": [
             {
               "value": 0,
-              "label": "SPI0.0"
-            },
-            {
-              "value": 1,
-              "label": "SPI0.1"
+              "label": "..."
             }
           ]
         },
@@ -85,6 +86,9 @@
       "saveButton": {
         "label": "TRANSLATE.EADOG_LCD.SAVE",
         "data": [
+          "lcdType",
+          "lcdInverted",
+          "lcdUpsideDown"
         ]
       },
       "content": [
@@ -93,12 +97,13 @@
           "element": "select",
           "label": "TRANSLATE.EADOG_LCD.LCDTYPE",
           "doc": "TRANSLATE.EADOG_LCD.D_LCDTYPE",
-          "value": {"value": 0, "label": "DOGS102"},
+          "value": {"value": 0, "label": "..."},
           "options": [
-            {"value": 0, "label": "DOGS102"},
-            {"value": 1, "label": "DOGM132"},
-            {"value": 2, "label": "DOGM128"},
-            {"value": 3, "label": "DOGL128"}
+            {"value": 0, "label": "..."},
+            {"value": 1, "label": "DOG-S102"},
+            {"value": 2, "label": "DOG-M132"},
+            {"value": 3, "label": "DOG-M128"},
+            {"value": 4, "label": "DOG-L128"}
           ]
         },
         {
@@ -114,6 +119,89 @@
           "label": "TRANSLATE.EADOG_LCD.UPSIDEDOWN",
           "doc": "TRANSLATE.EADOG_LCD.D_UPSIDEDOWN",
           "value": 0
+        }
+      ]
+    },
+    {
+      "id": "navigationSettings",
+      "element": "section",
+      "label": "TRANSLATE.EADOG_LCD.NAVIGATIONSETTINGS",
+      "description": "TRANSLATE.EADOG_LCD.D_NAVIGATIONSETTINGS",
+      "icon": "fa-compass",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "system_hardware/eadog_lcd",
+        "method": "updateNavigationSettings"
+      },
+      "saveButton": {
+        "label": "TRANSLATE.EADOG_LCD.SAVE",
+        "data": [
+          "startLevel",
+          "highestLevel",
+          "menuTimeout",
+          "splashScreenTimeout"
+        ]
+      },
+      "content": [
+        {
+          "id": "startLevel",
+          "type": "text",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.STARTLEVEL",
+          "doc": "TRANSLATE.EADOG_LCD.D_STARTLEVEL",
+          "value": ""
+        },
+        {
+          "id": "highestLevel",
+          "type": "text",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.HIGHESTLEVEL",
+          "doc": "TRANSLATE.EADOG_LCD.D_HIGHESTLEVEL",
+          "value": ""
+        },
+        {
+          "id": "menuTimeout",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.MENUTIMEOUT",
+          "doc": "TRANSLATE.EADOG_LCD.D_MENUTIMEOUT",
+          "value": 0
+        },
+        {
+          "id": "splashScreenTimeout",
+          "type": "number",
+          "element": "input",
+          "label": "TRANSLATE.EADOG_LCD.SPLASHSCREENTIMEOUT",
+          "doc": "TRANSLATE.EADOG_LCD.D_SPLASHSCREENTIMEOUT",
+          "value": 0
+        }
+      ]
+    
+    },
+    {
+      "id": "debug_settings",
+      "element": "section",
+      "label": "TRANSLATE.EADOG_LCD.SET_DEBUG",
+      "description": "TRANSLATE.EADOG_LCD.D_SET_DEBUG",
+      "icon": "fa-bug",
+      "onSave": {
+        "type": "controller",
+        "endpoint": "system_hardware/eadog_lcd",
+        "method": "updateDebugSettings"
+      },
+      "saveButton": {
+        "label": "TRANSLATE.EADOG_LCD.SAVE",
+        "data": [
+          "logging"
+        ]
+      },
+      "content": [
+        {
+          "id":"logging",
+          "element":"switch",
+          "label": "TRANSLATE.EADOG_LCD.LOGGING",
+          "doc": "TRANSLATE.EADOG_LCD.D_LOGGING",
+          "value": false
         }
       ]
     }

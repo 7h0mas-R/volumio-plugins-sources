@@ -1,22 +1,54 @@
 {
-    "startLevel": {
-      "type": "string",
-      "value": "radio/favourites"
-    },  
-    "highestLevel": {
-      "type": "string",
-      "value": "radio/favourites"
-    },
-    "splashScreenTimeout": {
-      "type": "number",
-      "value": "2000"
-    },
-    "menuTimeout": {
-      "type": "number",
-      "value": "5"
-    },  
-    "logging": {
-      "type": "boolean",
-      "value": true
-    }
+  "spiDev": {
+    "type": "string",
+    "value": "..."
+  },
+  "rstPin": {
+    "type": "number",
+    "value": 0
+  },
+  "cdPin": {
+    "type": "number",
+    "value": 0
+  },
+  "speedHz": {
+    "type": "number",
+    "value": 0
+  },
+  "backlightPin": {
+    "type": "number",
+    "value": 0
+  },
+  "lcdType": {
+    "type": "string",
+    "value": "..."
+  },
+  "lcdInverted": {
+    "type": "boolean",
+    "value": false
+  },
+  "lcdUpsideDown": {
+    "type": "boolean",
+    "value": false
+  },
+  "startLevel": {
+    "type": "string",
+    "value": "radio/favourites"
+  },
+  "highestLevel": {
+    "type": "string",
+    "value": "radio/favourites"
+  },
+  "splashScreenTimeout": {
+    "type": "number",
+    "value": 2000
+  },
+  "menuTimeout": {
+    "type": "number",
+    "value": 5
+  },
+  "logging": {
+    "type": "boolean",
+    "value": true
+  }
 }

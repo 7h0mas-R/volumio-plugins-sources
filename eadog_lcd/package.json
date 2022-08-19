@@ -11,7 +11,7 @@
 	"repository": "https://github.com/yourname/yourrepo",
 	"volumio_info": {
 		"prettyName": "eadog_lcd",
-		"icon": "fa-lightbulb-o",
+		"icon": "fa-rectangle-terminal",
 		"plugin_type": "system_hardware",
 		"architectures": [
 			"amd64",
