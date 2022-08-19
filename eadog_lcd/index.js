@@ -52,7 +52,6 @@ eadogLcd.prototype.onStart = function() {
 
     self.maxLine = 4;
     self.SPIDevices = {};
-	self.loadI18nStrings(); 
     if (process.platform == 'darwin') {
         self.display = new lcd.TTYSimulator();
     } else {
@@ -76,6 +75,7 @@ eadogLcd.prototype.onStart = function() {
     self.activePage = 0;
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
+    self.loadI18nStrings(); 
     self.display.initialize({pinCd: 25, pinRst: 20, speedHz: 800000, viewDirection: 0, volume: 6})
     .then(_ => self.display.clear())
     .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
@@ -531,11 +531,11 @@ eadogLcd.prototype.updateDebugSettings = function (data) {
 eadogLcd.prototype.getI18nString = function (key) {
     var self = this;
 
-    if (self.i18nStrings[key] !== undefined) {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'"):'+ self.i18nStrings[key]);
-        return self.i18nStrings[key];
+    if (self.i18nStrings['EADOG_LCD'][key] !== undefined) {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'"):'+ self.i18nStrings['EADOG_LCD'][key]);
+        return self.i18nStrings['EADOG_LCD'][key];
     } else {
-        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'")'+ self.i18nStringsDefaults[key]);
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] getI18nString("'+key+'")'+ self.i18nStringsDefaults['EADOG_LCD'][key]);
         return self.i18nStringsDefaults['EADOG_LCD'][key];
     };
 }
