@@ -158,7 +158,7 @@ eadogLcd.prototype.getUIConfig = function() {
 			uiconf.sections[0].content[3].value = (self.config.get('speedHz'));
 			uiconf.sections[0].content[4].value = (self.config.get('backlightPin'));
             //LCD settings section
-			uiconf.sections[1].content[0].value = (self.config.get('lcdType'));
+			uiconf.sections[1].content[0].value.label = (self.config.get('lcdType'));
 			uiconf.sections[1].content[1].value = (self.config.get('lcdInverted'));
 			uiconf.sections[1].content[2].value = (self.config.get('lcdUpsideDown'));
             //Navigation settings section
