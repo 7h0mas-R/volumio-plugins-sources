@@ -52,22 +52,21 @@ eadogLcd.prototype.onStart = function() {
 
     self.maxLine = 4;
     self.SPIDevices = {};
-    if (process.platform == 'darwin') {
-        self.display = new lcd.TTYSimulator();
-    } else {
+    // if (process.platform == 'darwin') {
+    //     self.display = new lcd.TTYSimulator();
+    // } else {
         self.display = new lcd.DogS102();
-    }
+    // }
     self.font_prop_16px = new font.Font();
     self.font_prop_8px = new font.Font();
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin');
-    if (process.platform == 'darwin') {
-        self.socket = io.connect('http://volumio:3000');
-    } else {
+    // if (process.platform == 'darwin') {
+    //     self.socket = io.connect('http://volumio:3000');
+    // } else {
         self.socket = io.connect('http://localhost');
-    }
+    // }
 
-    //############################### improve, path is not good
     self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
@@ -76,28 +75,36 @@ eadogLcd.prototype.onStart = function() {
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
     self.loadI18nStrings(); 
-    self.display.initialize({pinCd: 25, pinRst: 20, speedHz: 800000, viewDirection: 0, volume: 6})
-    .then(_ => self.display.clear())
-    .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
-    .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
-    .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
-    .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
-    .then(_ => self.display.startAnimation(1000))
-    .then(_ => {
-        let timeout = parseInt(self.config.get('splashScreenTimeout'));
-        if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
-        setTimeout(() => {
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
-            self.display.clear()
-            .then(_=>self.activateListeners());
-        }, timeout)
-    })    
-    .then(_=> self.listSPIDevices()) //get list of available SPI devices
+    self.cdPin = self.config.get('cdPin');
+    self.rstPin = self.config.get('rstPin');
+    self.speedHz = self.config.get('speedHz');
+    self.lcdUpsideDown = self.config.get('lcdUpsideDown');
+    if (self.cdPin > 0 && self.rstPin > 0 && self.speedHz >=0) {
+        self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, speedHz: self.speedHz, viewDirection: 0, volume: 6})
+        .then(_ => self.display.clear())
+        .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
+        .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
+        .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
+        .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
+        .then(_ => self.display.startAnimation(1000))
+        .then(_ => {
+            let timeout = parseInt(self.config.get('splashScreenTimeout'));
+            if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
+            setTimeout(() => {
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
+                self.display.clear()
+                .then(_=>self.activateListeners());
+            }, timeout)
+        })    
+        .then(_=> self.listSPIDevices()) //get list of available SPI devices
 
-	// Once the Plugin has successfull started resolve the promise
-    .then(_ => defer.resolve())
-    .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
-
+        // Once the Plugin has successfull started resolve the promise
+        .then(_ => defer.resolve())
+        .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
+    } else {
+        if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SPI interface not yet configured, cannot start yet.');
+        self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_START_SUCCESS'), self.getI18nString('TOAST_START_NOCONFIG'));
+    }
     return defer.promise;
 };
 
