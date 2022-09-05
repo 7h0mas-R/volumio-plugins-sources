@@ -79,32 +79,34 @@ eadogLcd.prototype.onStart = function() {
     self.rstPin = self.config.get('rstPin');
     self.speedHz = self.config.get('speedHz');
     self.lcdUpsideDown = self.config.get('lcdUpsideDown');
-    if (self.cdPin > 0 && self.rstPin > 0 && self.speedHz >=0) {
-        self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, speedHz: self.speedHz, viewDirection: 0, volume: 6})
-        .then(_ => self.display.clear())
-        .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
-        .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
-        .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
-        .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
-        .then(_ => self.display.startAnimation(1000))
-        .then(_ => {
-            let timeout = parseInt(self.config.get('splashScreenTimeout'));
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
-            setTimeout(() => {
-                if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
-                self.display.clear()
-                .then(_=>self.activateListeners());
-            }, timeout)
-        })    
-        .then(_=> self.listSPIDevices()) //get list of available SPI devices
-
-        // Once the Plugin has successfull started resolve the promise
-        .then(_ => defer.resolve())
-        .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
-    } else {
-        if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SPI interface not yet configured, cannot start yet.');
-        self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_START_SUCCESS'), self.getI18nString('TOAST_START_NOCONFIG'));
-    }
+    self.listSPIDevices() //get list of available SPI devices
+    .then(_ => {
+        if (self.cdPin > 0 && self.rstPin > 0 && self.speedHz >=0) {
+            self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, speedHz: self.speedHz, viewDirection: 0, volume: 6})
+            .then(_ => self.display.clear())
+            .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
+            .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
+            .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
+            .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
+            .then(_ => self.display.startAnimation(1000))
+            .then(_ => {
+                let timeout = parseInt(self.config.get('splashScreenTimeout'));
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
+                setTimeout(() => {
+                    if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
+                    self.display.clear()
+                    .then(_=>self.activateListeners());
+                }, timeout)
+            })    
+            // Once the Plugin has successfull started resolve the promise
+            .then(_ => defer.resolve())
+            .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
+        } else {
+            if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SPI interface not yet configured, cannot start yet.');
+            self.commandRouter.pushToastMessage('success', self.getI18nString('TOAST_START_SUCCESS'), self.getI18nString('TOAST_START_NOCONFIG'));
+            defer.resolve();
+        }
+    })
     return defer.promise;
 };
 
@@ -471,6 +473,7 @@ eadogLcd.prototype.listSPIDevices = function() {
     var self = this;
     var defer = libQ.defer();
 
+    if (self.debugLogging) self.logger.info('[EADOG_LCD] listSPIDevices: Now checking for SPI devices');
     //read SPI devices with fs-extra.readdirSync because fs-extra.readdir returns "undefined" instead of a promise
     self.SPIDevices = fs.readdirSync('/dev').filter(file => file.startsWith('spidev'));
     if (self.debugLogging) self.logger.info('[EADOG_LCD] listSPIDevices: found ' + self.SPIDevices.length + ' devices.' + JSON.stringify(self.SPIDevices));
