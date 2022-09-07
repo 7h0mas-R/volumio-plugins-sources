@@ -48,6 +48,8 @@
       "TOAST_LCD_SAVE": "LCD settings",
       "TOAST_SPI_SAVE": "SPI settings",
       "TOAST_NAVIGATION_SAVE": "Navigation settings",
-      "TOAST_START_NOCONFIG": "Please configure SPI Interface."
+      "TOAST_START_NOCONFIG": "Please configure SPI Interface.",
+      "TOAST_INFO": "Information",
+      "TOAST_INFO_CONFIGINCOMPLETE": "Please complete Settings."
     }
 }
