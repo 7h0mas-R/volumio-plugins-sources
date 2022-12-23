@@ -7,8 +7,7 @@ var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 var font = require('font');
 var lcd = require('lcd')
-var io = require('socket.io-client');
-const { start } = require('repl');
+const io = require('socket.io-client');
 const fontStyles = require('font').fontStyle
 const animationTypes = require('lcd').animationTypes
 
@@ -233,6 +232,7 @@ eadogLcd.prototype.checkConfig = function () {
 
 eadogLcd.prototype.activateListeners = function () {
     var self = this;
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] activateListeners: activating now' + self.state)
     self.socket.on('pushBrowseLibrary', function(data) {
         if (data.navigation != undefined && data.navigation.prev != undefined) {
             self.previousLevel = data.navigation.prev.uri;
