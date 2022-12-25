@@ -1,6 +1,6 @@
 {
 	"name": "eadog_lcd",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "Plugin supports the use of small, cheap LCD displays from the \"Electronic Assembly\" DOG series to be used as display for Volumio (e.g. in front-panels of DIY HiFi-Racks or Webradios)",
 	"main": "index.js",
 	"scripts": {
@@ -32,7 +32,7 @@
 		"font": "7h0mas-R/Font#352f4b01b0",
 		"fs-extra": "^0.28.0",
 		"kew": "^0.7.0",
-		"lcd": "7h0mas-R/LCD",
+		"lcd": "git+https://github.com/7h0mas-R/LCD.git",
 		"socket.io-client": "^2.3.1",
 		"v-conf": "^1.4.0"
 	},

@@ -2,12 +2,12 @@
 
 var libQ = require('kew');
 var fs = require('fs-extra');
+var io = require('socket.io-client');
 var config = new (require('v-conf'))();
 var exec = require('child_process').exec;
 var execSync = require('child_process').execSync;
 var font = require('font');
-var lcd = require('lcd')
-const io = require('socket.io-client');
+var lcd = require('lcd');
 const fontStyles = require('font').fontStyle
 const animationTypes = require('lcd').animationTypes
 
@@ -52,7 +52,7 @@ eadogLcd.prototype.onStart = function() {
     self.SPIDevices = {};
     self.debugLogging = (self.config.get('logging')==true);
 	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin. Config: ' + JSON.stringify(self.config));
-    self.socket = io.connect('http://localhost');
+    self.socket = io.connect('http://localhost:3000');
 
     self.maxLine = 4;
     self.font_prop_16px = new font.Font();
@@ -189,6 +189,7 @@ eadogLcd.prototype.displayInitialize = function() {
                 break;
         }
         self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, speedHz: self.speedHz, viewDirection: 0, volume: 6})
+        // .then(_ => self.display.hwReset())
         .then(_ => self.display.clear())
         .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
         .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
