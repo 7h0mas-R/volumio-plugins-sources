@@ -51,7 +51,8 @@ eadogLcd.prototype.onStart = function() {
 
     self.SPIDevices = {};
     self.debugLogging = (self.config.get('logging')==true);
-	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: starting plugin. Config: ' + JSON.stringify(self.config));
+    self.opState = states.starting;
+	if (self.debugLogging) self.logger.info('[EADOG_LCD] onStart: opState=' + self.opState + '. Starting plugin. Config: ' + JSON.stringify(self.config));
     self.socket = io.connect('http://localhost:3000');
 
     self.maxLine = 4;
@@ -60,7 +61,6 @@ eadogLcd.prototype.onStart = function() {
     self.font_prop_16px.loadFontFromJSON('font_proportional_16px.json');
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
-    self.state = 0;
     self.activePage = 0;
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
@@ -188,24 +188,33 @@ eadogLcd.prototype.displayInitialize = function() {
                 self.display = new lcd.DogS102();        
                 break;
         }
-        self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, speedHz: self.speedHz, viewDirection: 0, volume: 6})
+        self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, pinBacklight: 25, speedHz: self.speedHz, viewDirection: 0, volume: 6})
         // .then(_ => self.display.hwReset())
+        .then(_ => self.display.swReset())
+        .then(_ => self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, pinBacklight: 25, speedHz: self.speedHz, viewDirection: 0, volume: 6}))
         .then(_ => self.display.clear())
-        .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
-        .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.swingPage))
-        .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.swingPage))
-        .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.swingPage))
+        .then(_ => self.display.backlightOn())
         .then(_ => self.display.startAnimation(1000))
+        .then(_ => self.display.setPageBufferLines(0,"UNDA 3.0",self.font_prop_16px))
+        .then(_ => self.display.setPageBufferLines(3,"powered by",self.font_prop_8px,0,animationTypes.none))
+        .then(_ => self.display.setPageBufferLines(4,"       Volumio 3",self.font_prop_8px,0,animationTypes.none))
+        .then(_ => self.display.setPageBufferLines(7,"(C)2022 7h0mas-R",self.font_prop_8px,0,animationTypes.none))
         .then(_ => {
             let timeout = parseInt(self.config.get('splashScreenTimeout'));
             if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: setting SplashScreenTimer to ' + timeout + ' ms.')
             setTimeout(() => {
-                if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed')
+                self.opState = states.status;
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed. New opState=' + self.opState);
                 self.display.clear()
-                .then(_=>self.activateListeners());
+                .then(_=>self.activateListeners())
             }, timeout)
         })    
-        // Once the Plugin has successfull started resolve the promise
+        .then(_ => {
+            setTimeout(() => {
+                self.socket.emit('play');
+            }, 3000)
+        })    
+         // Once the Plugin has successfull started resolve the promise
         .then(_ => defer.resolve())
         .catch(err => self.logger.error('[EADOG_LCD] onStart: failed with ', err))
     } else {
@@ -233,7 +242,7 @@ eadogLcd.prototype.checkConfig = function () {
 
 eadogLcd.prototype.activateListeners = function () {
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] activateListeners: activating now' + self.state)
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] activateListeners: activating now. opState=' + self.opState)
     self.socket.on('pushBrowseLibrary', function(data) {
         if (data.navigation != undefined && data.navigation.prev != undefined) {
             self.previousLevel = data.navigation.prev.uri;
@@ -266,7 +275,7 @@ eadogLcd.prototype.activateListeners = function () {
         self.socket.emit('getBrowseSources');
     }
     self.socket.emit('getState');
-    // self.socket.emit('browseLibrary',{"uri":"radio/selection"});
+    //self.socket.emit('browseLibrary',{"uri":"radio/selection"});
 }
 
 eadogLcd.prototype.deactivateListeners = function () {
@@ -279,8 +288,8 @@ eadogLcd.prototype.deactivateListeners = function () {
 
 eadogLcd.prototype.up = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] up: Received up command in status:' + self.state)
-    switch (self.state) {
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] up: Received up command in status:' + self.opState)
+    switch (self.opState) {
         case states.menu:
             if (self.menuItems != undefined) {
                 self.selectedItem = (self.activePage * self.maxLine + self.selectedLine)
@@ -292,7 +301,7 @@ eadogLcd.prototype.up = function(){
             break;
     
         default:
-            self.state = states.menu;
+            self.opState = states.menu;
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -301,8 +310,8 @@ eadogLcd.prototype.up = function(){
 
 eadogLcd.prototype.down = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] down: Received down command in status:' + self.state)
-    switch (self.state) {
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] down: Received down command in status:' + self.opState)
+    switch (self.opState) {
         case states.menu:
             if (self.menuItems != undefined) {
                 self.selectedItem = (self.activePage * self.maxLine + self.selectedLine)
@@ -314,7 +323,7 @@ eadogLcd.prototype.down = function(){
             break;
     
         default:
-            self.state = states.menu;
+            self.opState = states.menu;
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -323,8 +332,8 @@ eadogLcd.prototype.down = function(){
 
  eadogLcd.prototype.select = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] select: Received select command in status:' + self.state)
-    switch (self.state) {
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] select: Received select command in status:' + self.opState)
+    switch (self.opState) {
         case states.menu:
             let selectedItem = (self.activePage * self.maxLine + self.selectedLine)
             let selectedType = self.menuItems[selectedItem].plugin_type != undefined? self.menuItems[selectedItem].plugin_type: self.menuItems[selectedItem].type
@@ -348,7 +357,7 @@ eadogLcd.prototype.down = function(){
             break;
     
         default:
-            self.state = states.menu;
+            self.opState = states.menu;
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -399,8 +408,8 @@ eadogLcd.prototype.down = function(){
 }
  eadogLcd.prototype.back = function(){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] back: Received command in status:' + self.state)
-    switch (self.state) {
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] back: Received command in status:' + self.opState)
+    switch (self.opState) {
         case states.menu:
             if (self.previousLevel != undefined) {
                 if (self.previousLevel == "/") {
@@ -416,7 +425,7 @@ eadogLcd.prototype.down = function(){
             break;
     
         default:
-            self.state = states.menu;
+            self.opState = states.menu;
             self.refreshDisplay(self.menuItems)
             break;
     }
@@ -426,32 +435,35 @@ eadogLcd.prototype.down = function(){
 eadogLcd.prototype.resetMenuTimer = function () {
     var self = this;
 
-    if (self.state.status == undefined || state.status != self.state.status) {
-        self.display.setPageBufferLines(6,self.state.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
+    if (self.wsStatus.status == undefined || state.status != self.wsStatus.status) {
+        self.display.setPageBufferLines(6,self.wsStatus.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
     }
 }
 eadogLcd.prototype.updateStatus = function (status){
     var self = this;
-    if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + status);
-    if (status == undefined) {
-        status = self.status;  
+    if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + JSON.stringify(status));
+    if (self.wsStatus === undefined) self.wsStatus = {};
+    if (status !== undefined) {
+        if (self.wsStatus.artist == undefined || status.artist != self.wsStatus.artist ) {
+            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Artist: ' + status.artist);
+            self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.none,undefined,' +++ ');
+        }
+        if (self.wsStatus.title == undefined || status.title != self.wsStatus.title) {
+            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Title: ' + status.title);
+            self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.none,undefined,' +++ ');
+        }
+        self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
+        if (self.wsStatus.status == undefined || status.status != self.wsStatus.status || status == undefined) {
+            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Status: ' + status.status);
+            self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
+        }
+        self.wsStatus = status;
     } 
-    if (self.state.artist == undefined || state.artist != self.state.artist ) {
-        self.display.setPageBufferLines(0,status.artist,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
-    }
-    if (self.state.title == undefined || state.title != self.state.title) {
-        self.display.setPageBufferLines(2,status.title,self.font_prop_16px,fontStyles.normal,animationTypes.rotatePage,undefined,' +++ ');
-    }
-    self.display.setPageBufferLines(4," ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    if (self.state.status == undefined || state.status != self.state.status || status == undefined) {
-        self.display.setPageBufferLines(6,status.status,self.font_prop_16px,fontStyles.normal,animationTypes.none);
-    }
-    self.status = status;
 }
 
 eadogLcd.prototype.refreshDisplay = async function (){
     var self = this;
-    switch (self.state) {
+    switch (self.opState) {
         case states.menu:
             let pagesPerLine = self.font_prop_16px._heightBytes;
             var style = 0;
@@ -482,7 +494,7 @@ eadogLcd.prototype.refreshDisplay = async function (){
                                 break;
                         }
                     }
-                    this.display.setPageBufferLines(i* pagesPerLine,outputLine,self.font_prop_16px,style,animationTypes.rotateStep,51);
+                    this.display.setPageBufferLines(i* pagesPerLine,outputLine,self.font_prop_16px,style,animationTypes.none,51);
                 }
             }
             break;
