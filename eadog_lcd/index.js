@@ -62,6 +62,9 @@ eadogLcd.prototype.onStart = function() {
     self.font_prop_8px.loadFontFromJSON('font_proportional_8px.json');
     self.font_prop_16px.spacing = 0;
     self.activePage = 0;
+    self.displayBlocked = false;
+    self.statusNeedsUpdate = false;
+    self.menuNeeded = false;
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
     self.loadI18nStrings(); 
@@ -188,10 +191,11 @@ eadogLcd.prototype.displayInitialize = function() {
                 self.display = new lcd.DogS102();        
                 break;
         }
+        self.displayBlocked = true;
         self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, pinBacklight: 25, speedHz: self.speedHz, viewDirection: 0, volume: 6})
         .then(_ => self.display.hwReset(1000))
         //.then(_ => self.display.swReset())
-        .then(_ => self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, pinBacklight: 25, speedHz: self.speedHz, viewDirection: 0, volume: 6}))
+        .then(_ => self.display.initialize({pinCd: self.cdPin, pinRst: self.rstPin, pinBacklight: 25, speedHz: self.speedHz, viewDirection: 0, volume: 10}))
         .then(_ => self.display.clear())
         .then(_ => self.display.backlightOn())
         // .then(_ => self.display.startAnimation(1000))
@@ -209,8 +213,19 @@ eadogLcd.prototype.displayInitialize = function() {
             setTimeout(() => {
                 self.opState = states.status;
                 if (self.debugLogging) this.logger.info('[EADOG_LCD] onStart: SplashScreenTimer elapsed. New opState=' + self.opState);
+
                 self.display.clear()
-                .then(_=>self.activateListeners())
+                .then(_ => {
+                    self.displayBlocked = false;
+                    if (self.menuNeeded) {
+                        self.menuNeeded = false;
+                        self.refreshDisplay()
+                    } else if (self.statusNeedsUpdate) {
+                        self.statusNeedsUpdate = false;
+                        self.updateStatus();
+                    }
+                    self.activateListeners()
+                })
             }, timeout)
         })    
         .then(_ => {
@@ -451,24 +466,37 @@ eadogLcd.prototype.updateStatus = async function (status){
     if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus: ' + JSON.stringify(status));
     if (self.wsStatus === undefined) self.wsStatus = {};
     if (status !== undefined) {
-        if (self.wsStatus.artist == undefined || status.artist != self.wsStatus.artist ) {
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Artist: ' + status.artist);
-            await self.display.moveToColPage(0,0);
-            await self.display.writeLine(status.artist,self.font_prop_16px,fontStyles.normal);
+        if (!self.displayBlocked) {
+            self.displayBlocked = true;
+            if (self.wsStatus.artist == undefined || status.artist != self.wsStatus.artist ) {
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Artist: ' + status.artist);
+                await self.display.moveToColPage(0,0);
+                await self.display.writeLine(status.artist,self.font_prop_16px,fontStyles.normal);
+            }
+            if (self.wsStatus.title == undefined || status.title != self.wsStatus.title) {
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Title: ' + status.title);
+                await self.display.moveToColPage(0,2)
+                await self.display.writeLine(status.title,self.font_prop_16px,fontStyles.normal);
+            }
+            await self.display.moveToColPage(0,4)
+            await self.display.writeLine(" ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
+            if (self.wsStatus.status == undefined || status.status != self.wsStatus.status || status == undefined) {
+                if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Status: ' + status.status);
+                await self.display.moveToColPage(0,6)
+                await self.display.writeLine(status.status,self.font_prop_16px,fontStyles.normal);
+            }
+            self.wsStatus = status;
+            self.displayBlocked = false;
+            if (self.menuNeeded) {
+                self.menuNeeded = false;
+                self.refreshDisplay()
+            } else if (self.statusNeedsUpdate) {
+                self.statusNeedsUpdate = false;
+                self.updateStatus()
+            }
+        } else {
+            self.statusNeedsUpdate = true;
         }
-        if (self.wsStatus.title == undefined || status.title != self.wsStatus.title) {
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Title: ' + status.title);
-            await self.display.moveToColPage(0,2)
-            await self.display.writeLine(status.title,self.font_prop_16px,fontStyles.normal);
-        }
-        await self.display.moveToColPage(0,4)
-        await self.display.writeLine(" ",self.font_prop_16px,fontStyles.normal,animationTypes.none);
-        if (self.wsStatus.status == undefined || status.status != self.wsStatus.status || status == undefined) {
-            if (self.debugLogging) this.logger.info('[EADOG_LCD] updateStatus - Status: ' + status.status);
-            await self.display.moveToColPage(0,6)
-            await self.display.writeLine(status.status,self.font_prop_16px,fontStyles.normal);
-        }
-        self.wsStatus = status;
     } 
 }
 
@@ -480,37 +508,50 @@ eadogLcd.prototype.refreshDisplay = async function (){
             let pagesPerLine = self.font_prop_16px._heightBytes;
             var style = 0;
             if (self.debugLogging) self.logger.info('[EADOG_LCD] refreshDisplay: Menuitems: ' + JSON.stringify(self.menuItems));
-            await (self.display.clear())
-            if (self.menuItems!=undefined) {
-                for (let i = 0; i < self.maxLine; i++) {
-                    if (i==self.selectedLine) {
-                        style = fontStyles.inverted; //inverted
-                    } else {
-                        style = fontStyles.normal;  //normal
-                    }
-                    let item = i+ self.activePage * self.maxLine;
-                    let outputLine = "                   ";
-                    if (item < self.menuItems.length) { 
-                        switch (self.menuItems[item].type) {
-                            case 'radio-category':
-                            case 'mywebradio-category':
-                            case 'radio-favourites':
-                            case 'folder':
-                            case 'webradio':
-                            case 'playlist':
-                                outputLine = self.menuItems[item].title+ "  ";                    
-                                break;
-                            case 'song':
-                                outputLine = self.menuItems[item].tracknumber + ") " + self.menuItems[i+ self.activePage * self.maxLine].title + "  ";                    
-                                break;
-                            default:
-                                outputLine = self.menuItems[item].name;
-                                break;
+            if (!self.displayBlocked) {
+                self.displayBlocked = true;
+                await (self.display.clear())
+                if (self.menuItems!=undefined) {
+                    for (let i = 0; i < self.maxLine; i++) {
+                        if (i==self.selectedLine) {
+                            style = fontStyles.inverted; //inverted
+                        } else {
+                            style = fontStyles.normal;  //normal
                         }
+                        let item = i+ self.activePage * self.maxLine;
+                        let outputLine = "                   ";
+                        if (item < self.menuItems.length) { 
+                            switch (self.menuItems[item].type) {
+                                case 'radio-category':
+                                case 'mywebradio-category':
+                                case 'radio-favourites':
+                                case 'folder':
+                                case 'webradio':
+                                case 'playlist':
+                                    outputLine = self.menuItems[item].title+ "  ";                    
+                                    break;
+                                case 'song':
+                                    outputLine = self.menuItems[item].tracknumber + ") " + self.menuItems[i+ self.activePage * self.maxLine].title + "  ";                    
+                                    break;
+                                default:
+                                    outputLine = self.menuItems[item].name;
+                                    break;
+                            }
+                        }
+                        await self.display.moveToColPage(0,i* pagesPerLine);
+                        await self.display.writeLine(outputLine,self.font_prop_16px,style);
                     }
-                    await self.display.moveToColPage(0,i* pagesPerLine);
-                    await self.display.writeLine(outputLine,self.font_prop_16px,style);
                 }
+                self.displayBlocked = false;
+                if (self.menuNeeded) {
+                    self.menuNeeded = false;
+                    self.refreshDisplay()
+                } else if (self.statusNeedsUpdate) {
+                    self.statusNeedsUpdate = false;
+                    self.updateStatus()
+                }
+            } else {
+
             }
             break;
     
