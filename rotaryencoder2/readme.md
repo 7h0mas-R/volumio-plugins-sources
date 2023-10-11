@@ -73,8 +73,8 @@ You could also send Volumio Volume or Skip functions via this option (just to gi
 **Skip**:
 - Command CW: `prev`
 - Command CCW: `next`
-- Data CW: `` (empty, _prev_ takes no argument) 
-- Data CCW: `` (empty, _next_ takes no argument)
+- Data CW: `{}` (empty, _prev_ takes no argument) 
+- Data CCW: `{}` (empty, _next_ takes no argument)
 
 **WARNING:**    
 If you use the _Emit_ function, remember that a fast turn of the knob can send a lot of messages in short time, so the called function better be fast or prepared for 'flooding'.    
