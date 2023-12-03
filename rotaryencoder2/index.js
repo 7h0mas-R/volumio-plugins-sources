@@ -450,7 +450,11 @@ rotaryencoder2.prototype.deactivateRotaries = function (rotaryIndexArray) {
 						if (self.debugLogging) self.logger.info('[ROTARYENCODER2] deactivateRotaries: deactivated rotary' + (rotaryIndex + 1));
 						return defer.resolve();
 					})
-					//.catch if detach does not work
+					.fail(msg => {
+						if (self.debugLogging) self.logger.error('[ROTARYENCODER2] deactivateRotaries: failed to deactivate rotary' + (rotaryIndex + 1));
+						self.commandRouter.pushToastMessage('errpr', self.getI18nString('ROTARYENCODER2.TOAST_WRONG_PARAMETER'), self.getI18nString('ROTARYENCODER2.TOAST_KILL_HANDLE_FAIL'));
+						return defer.resolve();
+					})
 				} else {
 					return defer.resolve()
 				}
@@ -939,7 +943,6 @@ rotaryencoder2.prototype.detachListener = function (handle){
         	defer.resolve();
         } else {
             self.logger.error('[ROTARYENCODER2] detachListener: could not kill handler process ' + handle);
-			self.commandRouter.pushToastMessage('errpr', self.getI18nString('ROTARYENCODER2.TOAST_WRONG_PARAMETER'), self.getI18nString('ROTARYENCODER2.TOAST_KILL_HANDLE_FAIL'));
             defer.resolve();
         }
 
