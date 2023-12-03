@@ -640,6 +640,7 @@ rotaryencoder2.prototype.addEventHandle = function (handle, rotaryIndex) {
 	});
 	self.handles[rotaryIndex].stderr.on('data', (data) => {
 		self.logger.error('[ROTARYENCODER2] addEventHandle: ' + `stderr: ${data}`);
+		self.commandRouter.pushToastMessage('errpr', self.getI18nString('ROTARYENCODER2.TOAST_WRONG_PARAMETER'), self.getI18nString('ROTARYENCODER2.TOAST_ERR_FROM_STREAM'));
 	});
 	self.handles[rotaryIndex].on('close', (code) => {
 		if (self.debugLogging) self.logger.info('[ROTARYENCODER2] addEventHandle: ' + `child process exited with code ${code} `);
