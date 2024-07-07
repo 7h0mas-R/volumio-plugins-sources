@@ -47,24 +47,24 @@ serialampcontroller.prototype.onStart = function() {
     self.ampStatus = {}; //global Object for storing the status of the amp
     self.ampStatus.volume = self.config.get('startupVolume');        
     self.ampStatus.mute = false;
-    self.ampStatus.Powering = "";
     self.serialDevices = {};
     self.portOpen = false;
+    self.status = 'stop'
     //activate websocket
     self.socket = io.connect('http://localhost:3000');
 	self.socket.emit('getState');
 	self.socket.on('pushState',function(data){
-        if (self.debugLogging) self.logger.info('[SERIALAMPCONTROLLER] on.pushState: ' + JSON.stringify(self.status) + ' - ' + data.status);
-        if ((self.status == undefined || self.status.status == 'stop' || self.status.status == 'pause' ) && data.status=='play') {
+        if (self.debugLogging) self.logger.info('[SERIALAMPCONTROLLER] 240314 1300 on.pushState: ' + JSON.stringify(self.status) + ' - ' + data.status);
+        if ((self.status == undefined || self.status == 'stop' || self.status == 'pause' ) && data.status=='play') {
             //status changed to play
-            if (self.ampStatus.power == 'standby') {
+        if (data.status == 'play') {
                 self.sendCommand('powerOn')
                 .then(_ => self.sendCommand('source',self.config.get('volumioInput')))
             } else if (self.config.get('switchInputAtPlay')) {
                 self.sendCommand('source',self.config.get('volumioInput'));
+                  }   
             }            
-        }
-        if (self.status!==undefined) {self.status.status = data;}
+        if (self.status!==undefined) {self.status = data.status;}
 	})
     self.oldAlsaControllerConfig = self.commandRouter.executeOnPlugin('audio_interface', 'alsa_controller', 'getConfigParam', 'outputdevice');
     if (self.debugLogging) self.logger.info('[SERIALAMPCONTROLLER] onStart: previous ALSA config: ' + JSON.stringify(self.oldAlsaControllerConfig));
@@ -457,16 +457,10 @@ serialampcontroller.prototype.sendCommand  = function(...cmd) {
     if (self.selectedAmp != undefined && self.selectedAmp.commands != undefined && self.selectedAmp.sources != undefined && self.selectedAmp.sourceCmd != undefined) {
         switch (cmd[0]) {
             case  "powerOn": 
-                if (self.ampStatus.Powering != 'up') cmdString = cmdString + self.selectedAmp.commands.powerOn;
-                self.ampStatus.Powering = 'up';
+                cmdString = cmdString + self.selectedAmp.commands.powerOn;
                 break;
             case  "powerToggle": 
-                if (self.ampStatus.Powering == '') cmdString = cmdString = cmdString + self.selectedAmp.commands.powerToggle;
-                if (self.ampStatus.power == 'on' && self.ampStatus.Powering == '' ) {
-                    self.ampStatus.Powering = 'down'
-                } else if (self.ampStatus.power == 'standby' && self.ampStatus.Powering == '') {
-                    self.ampStatus.Powering = 'up'
-                }
+                cmdString = cmdString + self.selectedAmp.commands.powerToggle;
                 break;
             case  "volUp": 
                 cmdString = cmdString + self.selectedAmp.commands.volUp;
@@ -525,7 +519,6 @@ var self = this;
     switch (response) {
         case "respPowerOn":
             if (self.debugLogging) self.logger.info('[SERIALAMPCONTROLLER] processResponse: Amp signaled PowerOn. Previous state is: ' + self.ampStatus.power);
-            if (self.ampStatus.Powering == 'up') self.ampStatus.Powering = ''
             setTimeout(() => {
                 self.initVolumeSettings()
                 .then(_ => {
@@ -540,7 +533,6 @@ var self = this;
             break;
         case "respPowerOff":
             if (self.debugLogging) self.logger.info('[SERIALAMPCONTROLLER] processResponse: Amp signaled PowerOff');            
-            if (self.ampStatus.Powering == 'down') self.ampStatus.Powering = ''
             self.socket.emit('pause'); //stops volumio if amp is powered down
             self.messageReceived.emit('power', 'standby');
             self.ampStatus.power='standby';
