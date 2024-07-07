@@ -1,7 +1,7 @@
 {
     "logging": {
         "type": "boolean",
-        "value": false
+        "value": true
     },
     "serialInterfaceDev": {
         "type": "string",
@@ -17,15 +17,15 @@
     },
     "minVolume": {
         "type": "number",
-        "value": 0
+        "value": -96
     },
     "maxVolume": {
         "type": "number",
-        "value": 35
+        "value": -15
     },
     "startupVolume": {
         "type": "number",
-        "value": 5
+        "value": -55
     },
     "volumeSteps": {
         "type": "number",
@@ -33,11 +33,11 @@
     },
     "mapTo100": {
         "type": "boolean",
-        "value": false
+        "value": true
     },
     "pauseWhenMuted": {
         "type": "boolean",
-        "value": false
+        "value": true
     },
     "pauseWhenInputChanged": {
         "type": "boolean",
