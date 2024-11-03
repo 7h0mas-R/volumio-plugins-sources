@@ -67,6 +67,7 @@ eadogLcd.prototype.onStart = function() {
     self.menuNeeded = false;
     self.selectedLine = 0;
     self.currentLevel = self.config.get('startLevel');
+    self.highestLevel = self.config.get('highestLevel')
     self.loadI18nStrings(); 
     self.listSPIDevices() //get list of available SPI devices
     .then(_ =>  self.displayInitialize())
@@ -263,10 +264,12 @@ eadogLcd.prototype.activateListeners = function () {
     var self = this;
     if (self.debugLogging) this.logger.info('[EADOG_LCD] activateListeners: activating now. opState=' + self.opState)
     self.socket.on('pushBrowseLibrary', function(data) {
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] pushBrowseLibrary: ' + JSON.stringify(data));
         if (data.navigation != undefined && data.navigation.prev != undefined) {
             self.previousLevel = data.navigation.prev.uri;
-        } else {
-            self.previousLevel = "/";
+        } else {        
+            // self.previousLevel = "/";
+            self.previousLevel = self.highestLevel;
         }
         if (data.hasOwnProperty('navigation') && data.navigation.hasOwnProperty('lists') && data.navigation.lists.length > 0) {
             self.menuItems = data.navigation.lists[0].items;
@@ -275,8 +278,10 @@ eadogLcd.prototype.activateListeners = function () {
             self.selectedLine = 0;
             self.refreshDisplay();
         }
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] pushBrowseLibrary: self.previousLevel=' + self.previousLevel + ' self.menuItems=' + JSON.stringify(self.menuItems));
     });
     self.socket.on('pushBrowseSources', function(data) {    
+        if (self.debugLogging) self.logger.info('[EADOG_LCD] pushBrowseSources: ' + JSON.stringify(data));
         self.menuItems = data;
         self.pageCount = Math.ceil(data.length/self.maxLine);
         self.activePage = 0;
@@ -289,8 +294,10 @@ eadogLcd.prototype.activateListeners = function () {
     });
     let startUri = self.config.get('startLevel');
     if (startUri != undefined && startUri!="/") {
+        if (self.debugLogging) self.logger.info('[EADOG LCD] activateListeners: emit browseLibrary for ' + startUri);
         self.socket.emit('browseLibrary',{"uri":startUri});    
     } else {
+        if (self.debugLogging) self.logger.info('[EADOG LCD] activateListeners: emit getBrowseSources');
         self.socket.emit('getBrowseSources');
     }
     self.socket.emit('getState');
